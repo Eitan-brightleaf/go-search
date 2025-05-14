@@ -1,0 +1,372 @@
+<?php
+/**
+ * Plugin Name: gfsearch
+ *
+ * @package gfsearch
+ */
+
+add_action(
+    'init',
+    function () {
+		add_shortcode( 'gfsearch', 'gfsearch_shortcode' );
+	}
+);
+
+/**
+ * Processes the gfsearch shortcode to perform searching and displaying Gravity Forms entries
+ * based on specified criteria and attributes.
+ *
+ * Notes:
+ * This method allows searching for specific forms, multiple forms, or all forms. Custom formatting,
+ * sorting, filtering, limiting results, and handling specific search conditions is supported.
+ * Detailed formatting instructions are outlined above.
+ *
+ * Supported attributes include search fields, result limits, sorting directions, numeric comparisons,
+ * and unique results handling.
+ *
+ * @param array  $atts {
+ *      An associative array of attributes, or default values.
+ *
+ * @type string $target Form ID(s) to search. Accepts "0" (search all forms), a single ID,
+ *                                              or comma-separated list of form IDs (e.g., "1,2,3").
+ * @type string $search Field IDs to search within, comma-separated, optional.
+ * @type string $greater_than Search for entries where field value is greater than specified value(s).
+ * @type string $less_than Search for entries where field value is less than specified value(s).
+ * @type string $display String format for custom output. Surround field IDs with curly braces.
+ * @type string $sort_key Key to sort the results by; defaults to 'id'.
+ * @type string $sort_direction Sorting direction (ASC, DESC, or RAND). Defaults to DESC.
+ * @type bool $sort_is_num Indicates if sorted key values are numeric. Defaults to true.
+ * @type string $secondary_sort_key Secondary key for sorting results.
+ * @type string $secondary_sort_direction Secondary sorting order (ASC or DESC).
+ * @type bool $unique Limit results to unique values by key. Boolean value.
+ * @type mixed $limit Limits the number of results ('all' for all results, or an integer).
+ * @type string $search_mode Search mode (all or any). Defaults to "all".
+ * @type string $separator Separator to format results (e.g., "<br>").
+ * @type bool $search_empty Include entries with empty values for searched fields.
+ *
+ * @param string $content Content of the shortcode, typically search values separated by '|'.
+ *
+ * @return string|false Formatted search results or false if search fails due to missing attributes or invalid setup.
+ */
+function gfsearch_shortcode( $atts, $content = null ) {
+	/**
+	 * Notes:
+	 *
+	 * For the target use 0 to search all forms or a form ID to search a specific form or a comma separated list of form IDs to
+	 * search the specified forms.
+	 *
+	 * You can pass multiple id's to the search and display attributes, separated by a comma, in order to search or display multiple fields. If you are searching
+	 * for multiple fields enter the corresponding value as the content for the shortcode with each value to search for separated by a | symbol. Make sure you have the
+	 * same amount of values as fields you are searching and make sure they are in the same order.
+	 *
+	 * If you want custom formating for the display: Configure the attribute with the format you would like for the display and surround each id# by curly braces
+	 * i.e. display="This is example text before one field: {13} and this is some more ({14}), and this-{15} is the last field!). Each id {13}, {14}, and {15} will be replaced by
+	 * the correct value and the rest of the string will stay the same. Just make sure not to enter any characters that would break the shortcode such as " or []. Limited HTML is allowed.
+	 * As of now, only numeric values inside the {} will be processed.
+	 *
+	 * The search and display fields can be a field ID, entry property, or entry meta key.
+	 *
+	 * If you are searching for multiple values (fields) in the same entry you can use the search_mode attribute to determine if the entry must meet all the conditions
+	 * or not. Default is all conditions. If you pass in the value any (search_mode="any") then the result will be returned if any condition matches.
+	 *
+	 * To perform a global search on the form for any field with the specified value, leave the corresponding search id blank. To just display the values from a field leave out the search attribute and the
+	 * shortcode content.
+	 *
+	 * To check for multiple values for one field enter the field multiple times in the search attribute, with the desired values separated by a comma as the shortcode content and set the
+	 * search_mode attribute to "any".
+	 *
+	 * If you would like to search for results where the value is greater or less than the provided search value use the greater_than or less_than attributes.
+	 * The attribute expects the field id first and then the number to filter by separated by a space and comma. For example greater_than="4, 500" will filter out
+	 * all entries where field 4 has a value of less than 500.
+	 *
+	 * If you want to sort the entries use the sort_key, sort_direction, and sort_is_num. <br>
+	 * sort_key: The field ID, entry property, or entry meta key to sort the results. <br>
+	 * sort_direction: The direction to sort the results. Can be ASC, DESC, or RAND. Case-insensitive. Default is DESC <br>
+	 * sort_is_num: Indicates if the values of the specified key are numeric. Should be used in conjunction with the sort_key attribute. Default is true.
+	 *              To set to false use the string false (sort_is_num="false") or an empty value such as 0 or an empty string.
+	 *
+	 * If you want to have a secondary sort within the first use the secondary_sort_key and secondary_sort_direction attributes. They work similar to the primary sorting attributes, the only difference being
+	 * there is no random option for the sorting direction. There is also no "is_numeric" attribute. It is unnecessary here. Note also this attribute will be ignored if the primary sort direction is RAND.
+	 *
+	 * If you only want unique values use the attribute unique and give it any value (aside from 0 or an empty string).
+	 *
+	 * If you want to return a specific amount of results use the limit attribute. The default is one result. If you want to display all the results use the
+	 * value 'all' (limit="all"), case-insensitive. If you enter a number greater than the total amount of results all of them will be returned. If you enter 0 or an empty string
+	 * the default value will be used.
+	 *
+	 * You can specify the separator between results with the separator attribute (i.e. separator=&lt;br&gt;). Limited HTML (such as &lt;br&gt;) is allowed here.
+	 *
+	 * If you want to search for empty values, meaning where the specified field in the search attribute is empty, leave the content of the shortcode blank
+	 * and use the search_empty attribute. You can give it any non-empty value (0, empty string, etc.). The default is false so if there is a search field
+	 * with no value nothing will be returned.
+	 */
+
+	$result = apply_filters( 'gogv_shortcode_process', $content );
+	if ( $result !== $content ) {
+		return $result;
+	}
+
+	$atts = shortcode_atts(
+        [
+			'target'                   => '0',
+			'search'                   => '',
+			'greater_than'             => false,
+			'less_than'                => false,
+			'display'                  => '',
+			'sort_key'                 => 'id',
+			'sort_direction'           => 'DESC',
+			'sort_is_num'              => true,
+			'secondary_sort_key'       => '',
+			'secondary_sort_direction' => 'DESC',
+			'unique'                   => false,
+			'limit'                    => '1',
+			'search_mode'              => 'all',
+			'separator'                => '',
+			'search_empty'             => false,
+		],
+		$atts,
+		'gfsearch'
+        );
+
+	$content = html_entity_decode( $content, ENT_QUOTES );
+
+	$form_id = array_map( 'intval', explode( ',', $atts['target'] ) );
+
+	$search_criteria                          = [];
+	$search_criteria['status']                = 'active';
+	$search_criteria['field_filters']         = [];
+	$search_criteria['field_filters']['mode'] = in_array( strtolower( $atts['search_mode'] ), [ 'all', 'any' ], true ) ? strtolower( $atts['search_mode'] ) : 'all';
+
+	if ( ! empty( $atts['search'] ) && empty( $atts['display'] ) && ! $atts['search_empty'] ) {
+		return '';
+	}
+
+	$search_ids = array_map( 'sanitize_text_field', explode( ',', $atts['search'] ) );
+	$search_ids = array_map( 'trim', $search_ids );
+
+	$content_values = array_map( 'trim', explode( '|', $content ) );
+
+	foreach ( $search_ids as $index => $search_id ) {
+		if ( empty( $search_id ) ) {
+			continue;
+		}
+		$current_field = GFAPI::get_field( $form_id[0], $search_id );
+		if ( 'number' === $current_field['type'] ) {
+			$content_values[ $index ] = str_replace( ',', '', $content_values[ $index ] );
+		}
+		$search_criteria['field_filters'][] = [
+			'key'   => $search_id,
+			'value' => GFCommon::replace_variables( $content_values[ $index ], [], [] ),
+		];
+	}
+
+	$sorting = [
+		'key'        => sanitize_text_field( $atts['sort_key'] ),
+		'direction'  => in_array( strtoupper( $atts['sort_direction'] ), [ 'ASC', 'DESC', 'RAND' ], true ) ? strtoupper( $atts['sort_direction'] ) : 'DESC',
+		'is_numeric' => ! ( strtolower( $atts['sort_is_num'] ) === 'false' ) && $atts['sort_is_num'],
+	];
+
+	$secondary_sort_key       = sanitize_text_field( $atts['secondary_sort_key'] );
+	$secondary_sort_direction = in_array( strtoupper( $atts['secondary_sort_direction'] ), [ 'ASC', 'DESC' ], true )
+		? strtoupper( $atts['secondary_sort_direction'] )
+		: 'DESC';
+
+	$paging_offset = 0;
+	$total_count   = 0;
+
+	if ( 'all' !== strtolower( $atts['limit'] ) ) {
+		$original_limit = empty( $atts['limit'] ) ? 1 : (int) $atts['limit'];
+
+		if ( $secondary_sort_key ) {
+			$atts['limit'] = 'all';
+		}
+	}
+
+	if ( empty( $atts['limit'] ) ) {
+		$page_size = 1;
+	} elseif ( 'all' === strtolower( $atts['limit'] ) ) {
+		$page_size = 25;
+	} else {
+		$page_size = min( intVal( $atts['limit'] ), 25 );
+	}
+	$paging = [
+		'offset'    => $paging_offset,
+		'page_size' => $page_size,
+	];
+
+	$entries = GFAPI::get_entries( $form_id, $search_criteria, $sorting, $paging, $total_count );
+
+	if ( 'all' === $atts['limit'] || intVal( $atts['limit'] ) > 25 ) {
+		$count = count( $entries );
+		while ( $total_count > $count ) {
+			$paging_offset += 25;
+			$paging         = [
+				'offset'    => $paging_offset,
+				'page_size' => 25,
+			];
+			$new_entries    = GFAPI::get_entries( $form_id, $search_criteria, $sorting, $paging, $total_count );
+			array_push( $entries, ...$new_entries ); // $entries = array_merge( $entries, $new_entries );
+			if ( is_numeric( $atts['limit'] ) && count( $entries ) > $atts['limit'] ) {
+				break;
+			}
+		}
+		if ( is_numeric( $atts['limit'] ) ) {
+			$entries = array_slice( $entries, 0, intVal( $atts['limit'] ) );
+		}
+	}
+
+	if ( empty( $entries ) ) {
+		return '';
+	}
+
+	if ( ! empty( $secondary_sort_key ) && 'RAND' !== $sorting['direction'] ) {
+		$grouped_entries = [];
+		foreach ( $entries as $entry ) {
+			$primary_key_value                       = $entry[ $sorting['key'] ] ?? ''; // Use the primary sort key as the group key
+			$grouped_entries[ $primary_key_value ][] = $entry;
+		}
+
+		// Sort each group based on the secondary sort key
+		foreach ( $grouped_entries as &$group ) {
+			usort(
+                $group,
+                function ( $entry1, $entry2 ) use ( $secondary_sort_key, $secondary_sort_direction ) {
+					$value1 = $entry1[ $secondary_sort_key ] ?? '';
+					$value2 = $entry2[ $secondary_sort_key ] ?? '';
+
+					// For non-numeric values, use string comparison
+					if ( ! is_numeric( $value1 ) || ! is_numeric( $value2 ) ) {
+						if ( strtoupper( $secondary_sort_direction ) === 'ASC' ) {
+							return strcasecmp( $value1, $value2 ); // Ascending order for strings
+						}
+
+						return strcasecmp( $value2, $value1 ); // Descending order for strings
+					}
+
+					// If numeric, compare numerically
+					$value1 = (float) $value1;
+					$value2 = (float) $value2;
+
+					if ( strtoupper( $secondary_sort_direction ) === 'ASC' ) {
+						return $value1 <=> $value2; // Ascending order for numbers
+					}
+
+					return $value2 <=> $value1; // Descending order for numbers
+				}
+                );
+		}
+
+		unset( $group ); // Clean up the reference variable to avoid potential bugs
+
+		// Flatten groups back into a single array, retaining primary sort order
+		$entries = [];
+		foreach ( $grouped_entries as $group ) {
+			$entries = array_merge( $entries, $group );
+		}
+	}
+
+	if ( isset( $original_limit ) && $original_limit < count( $entries ) ) {
+		$entries = array_slice( $entries, 0, $original_limit );
+	}
+
+	if ( $atts['greater_than'] ) {
+		$greater_than = array_map( 'trim', explode( ',', $atts['greater_than'] ) );
+		$entries      = array_filter(
+            $entries,
+            function ( $entry ) use ( $greater_than ) {
+				if ( $entry[ intval( $greater_than[0] ) ] > floatval( $greater_than[1] ) ) {
+					return true;
+				}
+				return false;
+			}
+            );
+	}
+	if ( $atts['less_than'] ) {
+		$less_than = array_map( 'trim', explode( ',', $atts['less_than'] ) );
+		$entries   = array_filter(
+            $entries,
+            function ( $entry ) use ( $less_than ) {
+				if ( $entry[ intval( $less_than[0] ) ] < floatval( $less_than[1] ) ) {
+					return true;
+				}
+				return false;
+			}
+            );
+	}
+
+	$results = [];
+
+	$regex = '/{\d+}/';
+	preg_match_all( $regex, $atts['display'], $matches );
+
+	if ( empty( $matches[0] ) ) {
+		$display_ids = array_map( 'sanitize_text_field', explode( ',', $atts['display'] ) );
+		$display_ids = array_map( 'trim', $display_ids );
+	} else {
+		$display_ids = array_map( fn( $id ) => str_replace( [ '{', '}' ], '', $id ), $matches );
+		$display_ids = array_map( 'sanitize_text_field', $display_ids[0] );
+	}
+
+	$multi_input_present = false;
+	foreach ( $entries as $entry ) {
+		$entry_results = [];
+		foreach ( $display_ids as $display_id ) {
+
+			$field = GFAPI::get_field( $entry['form_id'], $display_id );
+			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			if ( 'number' === $field->type ) {
+				$entry_results[ $display_id ] = GFCommon::format_number( $entry[ $display_id ], $field->numberFormat, $entry['currency'], true );
+			} elseif ( 'date' === $field->type ) {
+				$entry_results[ $display_id ] = GFCommon::date_display( $entry[ $display_id ], 'Y-m-d', $field->dateFormat );
+			} elseif ( is_multi_input_field( $field ) ) {
+				$multi_input_present = true;
+				$ids                 = array_column( $field['inputs'], 'id' );
+				$field_results       = [];
+				foreach ( $ids as $id ) {
+					if ( ! empty( $entry[ $id ] ) ) {
+						$field_results[] = $entry[ $id ];
+					}
+				}
+				$entry_results[ $display_id ] = implode( ' ', $field_results );
+			} else {
+				$entry_results[ $display_id ] = $entry[ $display_id ];
+			}
+		}
+
+		$entry_results = array_filter( $entry_results, fn( $value ) => '' !== $value && ! is_null( $value ) );
+		if ( ! empty( $matches[0] ) ) {
+			$display_format = wp_kses_post( $atts['display'] );
+			foreach ( $display_ids as $display_id ) {
+				$display_format = str_replace( '{' . $display_id . '}', $entry_results[ $display_id ], $display_format );
+			}
+			$results[] = $display_format;
+		} else {
+			$results[] = implode( ', ', $entry_results );
+		}
+	}
+
+	if ( $atts['unique'] ) {
+		$results = array_unique( $results );
+	}
+
+	$results = array_map( 'trim', $results );
+	$results = array_filter( $results, fn( $value ) => '' !== $value && ! is_null( $value ) );
+
+	if ( empty( $atts['separator'] ) ) {
+		$separator = ( count( $display_ids ) > 1 || $multi_input_present ) ? '; ' : ', ';
+	} else {
+		$separator = wp_kses_post( $atts['separator'] );
+	}
+	return wp_kses_post( implode( $separator, $results ) );
+}
+
+/**
+ * Determines if a given field is a multi-input field.
+ *
+ * @param mixed $field The field configuration array. Expected to contain 'type' and optionally 'inputType' keys.
+ *
+ * @return bool True if the field is a multi-input field, false otherwise.
+ */
+function is_multi_input_field( $field ): bool {
+	return 'name' === $field['type'] || 'address' === $field['type'] || 'checkbox' === $field['type'] || ( ( 'image_choice' === $field['type'] || 'multi_choice' === $field['type'] ) && 'checkbox' === $field['inputType'] );
+}
