@@ -90,6 +90,9 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	 * The default value is also used for individual blank values within entries. For example, if multiple entries are returned and some have
 	 * values for the display fields while others don't, or if multiple fields are being displayed and some have values while others don't,
 	 * the default value will be used for those individual blank values.
+	 *
+	 * If you want to turn each result into a link to the relevant entry in the admin panel, use the link attribute with any non-empty value
+	 * (i.e. link="true"). This will wrap each result in an HTML anchor tag that links to the entry view page in the WordPress admin.
 	 */
 
 	$result = apply_filters( 'gogv_shortcode_process', $content );
@@ -115,6 +118,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			'separator'                => '',
 			'search_empty'             => false,
 			'default'                  => '',
+			'link'                     => false,
 		],
 		$atts,
 		'gfsearch'
@@ -354,9 +358,17 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
 				$display_format = str_replace( '{gfs:' . $display_id . '}', $value, $display_format );
 			}
-			$results[] = $display_format;
+			$result_text = $display_format;
+			if ( $atts['link'] ) {
+				$result_text = '<a target="_blank" href="' . admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $entry['form_id'] . '&lid=' . $entry['id'] ) . '">' . $result_text . '</a>';
+			}
+			$results[] = $result_text;
 		} else {
-			$results[] = implode( ', ', $entry_results );
+			$result_text = implode( ', ', $entry_results );
+			if ( $atts['link'] ) {
+				$result_text = '<a target="_blank"  href="' . admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $entry['form_id'] . '&lid=' . $entry['id'] ) . '">' . $result_text . '</a>';
+			}
+			$results[] = $result_text;
 		}
 	}
 
