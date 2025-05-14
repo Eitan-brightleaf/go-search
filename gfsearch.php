@@ -84,6 +84,12 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	 * If you want to search for empty values, meaning where the specified field in the search attribute is empty, leave the content of the shortcode blank
 	 * and use the search_empty attribute. You can give it any non-empty value (0, empty string, etc.). The default is false so if there is a search field
 	 * with no value nothing will be returned.
+	 *
+	 * If you want to specify a default value to display when no results are found, use the default attribute (i.e. default="No results found").
+	 * This value will be displayed if either no entries match the search criteria or if all entries are filtered out during processing.
+	 * The default value is also used for individual blank values within entries. For example, if multiple entries are returned and some have
+	 * values for the display fields while others don't, or if multiple fields are being displayed and some have values while others don't,
+	 * the default value will be used for those individual blank values.
 	 */
 
 	$result = apply_filters( 'gogv_shortcode_process', $content );
@@ -108,6 +114,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			'search_mode'              => 'all',
 			'separator'                => '',
 			'search_empty'             => false,
+			'default'                  => '',
 		],
 		$atts,
 		'gfsearch'
@@ -201,7 +208,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	}
 
 	if ( empty( $entries ) ) {
-		return '';
+		return wp_kses_post( $atts['default'] );
 	}
 
 	if ( ! empty( $secondary_sort_key ) && 'RAND' !== $sorting['direction'] ) {
@@ -309,9 +316,9 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			$field = GFAPI::get_field( $entry['form_id'], $display_id );
 			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			if ( 'number' === $field->type ) {
-				$entry_results[ $display_id ] = GFCommon::format_number( $entry[ $display_id ], $field->numberFormat, $entry['currency'], true );
+				$field_value = GFCommon::format_number( $entry[ $display_id ], $field->numberFormat, $entry['currency'], true );
 			} elseif ( 'date' === $field->type ) {
-				$entry_results[ $display_id ] = GFCommon::date_display( $entry[ $display_id ], 'Y-m-d', $field->dateFormat );
+				$field_value = GFCommon::date_display( $entry[ $display_id ], 'Y-m-d', $field->dateFormat );
 			} elseif ( is_multi_input_field( $field ) ) {
 				$multi_input_present = true;
 				$ids                 = array_column( $field['inputs'], 'id' );
@@ -321,19 +328,31 @@ function gfsearch_shortcode( $atts, $content = null ) {
 						$field_results[] = $entry[ $id ];
 					}
 				}
-				$entry_results[ $display_id ] = implode( ' ', $field_results );
+				$field_value = implode( ' ', $field_results );
 			} else {
-				$entry_results[ $display_id ] = $entry[ $display_id ];
+				$field_value = $entry[ $display_id ];
 			}
+
+			// Use default value if field value is empty
+			if ( '' === $field_value || is_null( $field_value ) ) {
+				$field_value = wp_kses_post( $atts['default'] );
+			}
+
+			$entry_results[ $display_id ] = $field_value;
 		}
 
-		$entry_results = array_filter( $entry_results, fn( $value ) => '' !== $value && ! is_null( $value ) );
+		// We only need to filter if the default value is empty
+		if ( '' === $atts['default'] || is_null( $atts['default'] ) ) {
+			$entry_results = array_filter( $entry_results, fn( $value ) => '' !== $value && ! is_null( $value ) );
+		}
 		if ( ! empty( $matches[0] ) ) {
 			$display_format = wp_kses_post( $atts['display'] );
 			foreach ( $display_ids as $display_id ) {
 				// Replace both {id} and {gfs:id} formats with the value
-				$display_format = str_replace( '{' . $display_id . '}', $entry_results[ $display_id ], $display_format );
-				$display_format = str_replace( '{gfs:' . $display_id . '}', $entry_results[ $display_id ], $display_format );
+				// If the field was filtered out (because default was empty), use empty string
+				$value          = $entry_results[ $display_id ] ?? '';
+				$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
+				$display_format = str_replace( '{gfs:' . $display_id . '}', $value, $display_format );
 			}
 			$results[] = $display_format;
 		} else {
@@ -347,6 +366,10 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	$results = array_map( 'trim', $results );
 	$results = array_filter( $results, fn( $value ) => '' !== $value && ! is_null( $value ) );
+
+	if ( empty( $results ) ) {
+		return wp_kses_post( $atts['default'] );
+	}
 
 	if ( empty( $atts['separator'] ) ) {
 		$separator = ( count( $display_ids ) > 1 || $multi_input_present ) ? '; ' : ', ';
