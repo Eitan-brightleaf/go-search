@@ -24,25 +24,7 @@ add_action(
  * Supported attributes include search fields, result limits, sorting directions, numeric comparisons,
  * and unique results handling.
  *
- * @param array  $atts {
- *      An associative array of attributes, or default values.
- *
- * @type string $target Form ID(s) to search. Accepts "0" (search all forms), a single ID,
- *                                              or comma-separated list of form IDs (e.g., "1,2,3").
- * @type string $search Field IDs to search within, comma-separated, optional.
- * @type string $greater_than Search for entries where field value is greater than specified value(s).
- * @type string $less_than Search for entries where field value is less than specified value(s).
- * @type string $display String format for custom output. Surround field IDs with curly braces.
- * @type string $sort_key Key to sort the results by; defaults to 'id'.
- * @type string $sort_direction Sorting direction (ASC, DESC, or RAND). Defaults to DESC.
- * @type bool $sort_is_num Indicates if sorted key values are numeric. Defaults to true.
- * @type string $secondary_sort_key Secondary key for sorting results.
- * @type string $secondary_sort_direction Secondary sorting order (ASC or DESC).
- * @type bool $unique Limit results to unique values by key. Boolean value.
- * @type mixed $limit Limits the number of results ('all' for all results, or an integer).
- * @type string $search_mode Search mode (all or any). Defaults to "all".
- * @type string $separator Separator to format results (e.g., "<br>").
- * @type bool $search_empty Include entries with empty values for searched fields.
+ * @param array  $atts An associative array of attributes, or default values.
  *
  * @param string $content Content of the shortcode, typically search values separated by '|'.
  *
@@ -59,10 +41,13 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	 * for multiple fields enter the corresponding value as the content for the shortcode with each value to search for separated by a | symbol. Make sure you have the
 	 * same amount of values as fields you are searching and make sure they are in the same order.
 	 *
-	 * If you want custom formating for the display: Configure the attribute with the format you would like for the display and surround each id# by curly braces
+	 * If you want custom formating for the display: Configure the attribute with the format you would like for the display and surround each entry property by curly braces
 	 * i.e. display="This is example text before one field: {13} and this is some more ({14}), and this-{15} is the last field!). Each id {13}, {14}, and {15} will be replaced by
 	 * the correct value and the rest of the string will stay the same. Just make sure not to enter any characters that would break the shortcode such as " or []. Limited HTML is allowed.
-	 * As of now, only numeric values inside the {} will be processed.
+	 * Any entry property key can be used as a placeholder to be replaced with the value. For example, you can use {id} or {created_by} or a field id {13}, etc. See https://docs.gravityforms.com/entry-object/.
+	 *
+	 * When using this shortcode with Gravity View, you may need to prefix non-numeric keys with "gfs:" to prevent Gravity View from parsing them as merge tags.
+	 * For example, use {gfs:id} instead of {id} when working with Gravity View. Both formats are supported by this shortcode.
 	 *
 	 * The search and display fields can be a field ID, entry property, or entry meta key.
 	 *
@@ -296,15 +281,24 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	$results = [];
 
-	$regex = '/{\d+}/';
+	$regex = '/{(gfs:)?([^{}]+)}/';
 	preg_match_all( $regex, $atts['display'], $matches );
 
 	if ( empty( $matches[0] ) ) {
 		$display_ids = array_map( 'sanitize_text_field', explode( ',', $atts['display'] ) );
 		$display_ids = array_map( 'trim', $display_ids );
 	} else {
-		$display_ids = array_map( fn( $id ) => str_replace( [ '{', '}' ], '', $id ), $matches );
-		$display_ids = array_map( 'sanitize_text_field', $display_ids[0] );
+		// Extract the actual IDs, removing the prefix if present
+		$display_ids = array_map(
+				function ( $individual_match ) {
+					// Remove the curly braces
+					$content = str_replace( [ '{', '}' ], '', $individual_match );
+					// Remove the gfs: prefix if present
+					return str_replace( 'gfs:', '', $content );
+				},
+            $matches[0]
+		);
+		$display_ids = array_map( 'sanitize_text_field', $display_ids );
 	}
 
 	$multi_input_present = false;
@@ -337,7 +331,9 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		if ( ! empty( $matches[0] ) ) {
 			$display_format = wp_kses_post( $atts['display'] );
 			foreach ( $display_ids as $display_id ) {
+				// Replace both {id} and {gfs:id} formats with the value
 				$display_format = str_replace( '{' . $display_id . '}', $entry_results[ $display_id ], $display_format );
+				$display_format = str_replace( '{gfs:' . $display_id . '}', $entry_results[ $display_id ], $display_format );
 			}
 			$results[] = $display_format;
 		} else {
