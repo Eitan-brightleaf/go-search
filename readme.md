@@ -1,99 +1,82 @@
 # GFSearch
+A powerful and flexible Gravity Forms search and display shortcode for WordPress.
 
-A flexible Gravity Forms search and display shortcode for WordPress.
+## 📝 Description
+The **GFSearch** shortcode enables advanced searching and displaying of Gravity Forms entries on your posts, pages, 
+Gravity Views, or custom templates. It allows filtering results, sorting entries, custom formatting, and much more—all 
+tailored to your exact needs.
 
-## Description
+## ✨ Key Features
+- **Form Targeting:** Search entries across all forms, specific forms, or selected forms via IDs.
+- **Field Filtering:** Search or display multiple fields simultaneously using field IDs and corresponding values.
+- **Custom Formatting:** Customize output using placeholders and HTML formatting, supporting field data and meta properties.
+- **Sorting Options:** Primary and secondary sorting by ascending, descending, or random order.
+- **Comparison Filters:** Filter numeric fields by values (`greater_than`, `less_than`). 
+- **Global Search:** Search all form fields for specific values easily.
+- **Unique Results:** Eliminate duplicate entries by enabling the `unique` option.
+- **Advanced Search Modes:** Match any condition (`search_mode="any"`) or all conditions (default).
+- **HTML Supported in Display:** Fully supports HTML in `display` and `separator` attributes, e.g., `<li>` for lists.
+- **Search for Empty Fields:** Identify and display entries with missing field data.
+- **Entry Linking:** Convert results into links to entry admin panel views.
 
-GFSearch provides a powerful shortcode for searching and displaying Gravity Forms entries. It supports searching across all forms or specific forms, multiple fields, custom formatting, sorting, filtering, and more.
-
-## Usage
-
-Add the `[gfsearch]` shortcode to your posts or pages with various attributes to customize search and display behavior.
-
-### Key Features
-
-- **Target Forms:** Search all forms (`target="0"`), a specific form ID, or a comma-separated list of form IDs.
-- **Multiple Fields:** Search or display multiple fields by passing comma-separated IDs to `search` and `display` attributes. Provide corresponding values separated by `|` in the shortcode content.
-- **Custom Formatting:** Use the `display` attribute with curly braces for placeholders (e.g., `display="Field: {13}, User: {created_by}"`). Supports entry properties and field IDs. See [Gravity Forms Entry Object](https://docs.gravityforms.com/entry-object/).
-- **Gravity View Compatibility:** Prefix non-numeric keys with `gfs:` (e.g., `{gfs:id}`) to avoid merge tag conflicts.
-- **Global Search:** Leave a search ID blank to search any field for the specified value.
-- **Multiple Values for One Field:** Repeat the field in `search`, separate values by `|` in content, and set `search_mode="any"`.
-- **Comparison Filters:** Use `greater_than` or `less_than` (e.g., `greater_than="4, 500"`).
-- **Sorting:** Use `sort_key`, `sort_direction` (`ASC`, `DESC`, `RAND`), and `sort_is_num` (`true`/`false`). Secondary sorting available.
-- **Unique Results:** Use `unique` attribute to return only unique values.
-- **Limit Results:** Use `limit` (number or `all`).
-- **Separator:** Use `separator` (e.g., `separator="<br>"`).
-- **Search for Empty Values:** Use `search_empty` with a blank shortcode content.
-- **Default Value:** Use `default` to display when no results are found or for blank values.
-- **Link to Entries:** Use `link` to wrap results in a link to the entry in the admin panel.
-
-## Instructions
-
-- **Targeting Forms:**  
-    Use `target="0"` to search all forms, a specific form ID, or a comma-separated list of form IDs to search specific forms.
-
-- **Multiple Fields:**  
-    Pass multiple IDs to the `search` and `display` attributes, separated by commas, to search or display multiple fields. When searching for multiple fields, provide the corresponding values as the shortcode content, separated by a `|` symbol. Ensure the number and order of values matches the fields being searched.
-
-- **Custom Formatting:**  
-    For custom display formatting, configure the `display` attribute with your desired format and wrap each entry property in curly braces (e.g., `display="Text before: {13}, more: {14}, last: {15}"`). Each placeholder (e.g., `{13}`) will be replaced by the correct value. Avoid characters that could break the shortcode, such as `"` or `[]`. Use single quotes if required. HTML is allowed. Any entry property key can be used as a placeholder (e.g., `{id}`, `{created_by}`, `{13}`). See [Gravity Forms Entry Object](https://docs.gravityforms.com/entry-object/).
-
-- **Gravity View Compatibility:**  
-    When using with Gravity View, prefix non-numeric keys with `gfs:` (e.g., `{gfs:id}`) to prevent Gravity View from parsing them as merge tags. Both `{id}` and `{gfs:id}` formats are supported.
-
-- **Search and Display Fields:**  
-    The `search` and `display` fields can be a field ID, entry property, or entry meta key.
-
-- **Search Modes:**  
-    To search for multiple values in the same entry, use the `search_mode` attribute. Default is all conditions; use `search_mode="any"` to match any condition.
-
-- **Global Search:**  
-    To perform a global search for any field with a specified value, leave the corresponding search ID blank.
-
-- **Display Only:**  
-    To display values from a field without searching, omit the `search` attribute and shortcode content.
-
-- **Multiple Values for One Field:**  
-    To search for multiple values for one field, enter the field multiple times in the `search` attribute, separate values by commas in the shortcode content, and set `search_mode="any"`.
-
-- **Comparison Filters:**  
-    Use `greater_than` or `less_than` attributes to filter by numeric value. Format: `greater_than="4, 500"` filters out entries where field 4 is less than 500.
-
-- **Sorting:**  
-    Use `sort_key` (field ID, entry property, or entry meta key), `sort_direction` (`ASC`, `DESC` (default), `RAND`), and `sort_is_num` (`true`/`false`). For secondary sorting, use `secondary_sort_key` and `secondary_sort_direction`. Secondary sorting is ignored if primary sort direction is `RAND`.
-
-- **Unique Results:**  
-    Use the `unique` attribute with any non-empty value to return only unique values.
-
-- **Limit Results:**  
-    Use the `limit` attribute to specify the number of results. Use `limit="all"` to display all results. If the number exceeds available results, all are returned. Default is one result.
-
-- **Separator:**  
-    Specify the separator between results with the `separator` attribute (e.g., `separator="<br>"`). Limited HTML is allowed.
-
-- **Search for Empty Values:**  
-    To search for empty values, leave the shortcode content blank and use the `search_empty` attribute with any non-empty value.
-
-- **Default Value:**  
-    Use the `default` attribute to specify a value to display when no results are found or for blank values within entries.
-
-- **Link to Entries:**  
-    Use the `link` attribute with any non-empty value to wrap each result in a link to the entry view page in the WordPress admin.
-
-## Example
-
-```markdown
-[gfsearch target="1" search="13,14" display="Name: {13}, Email: {14}" search_mode="all" limit="5" separator="<br>" default="No results found"]
+## 🚀 Usage
+To use the shortcode, embed in your content areas with relevant attributes, e.g.: `[gfsearch]`
+``` markdown
+[gfsearch target="1" search="13,14" display="Name: {13}, Email: {14}" limit="5" separator="<br>" default="No results found"]
 John|john@example.com
 [/gfsearch]
 ```
+### Attributes Overview
 
-## Notes
+| **Attribute**                  | **Description**                                                                                                                                                                              | **Default**     |
+|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| **`target`**                   | Specify forms to search: `0` for all forms, or comma-separated list of form IDs (e.g., `target="1,2"`).                                                                                      | (all forms) `0` |
+| **`search`**                   | Field IDs for filtering entries. Separate multiple IDs by a comma (`search="13,14"`).                                                                                                        | _(None)_        |
+| **`display`**                  | Format results with placeholders, e.g., `display="Result: {13}"`. Supports HTML tags such as `<a>`, `<ul>`, `<li>`, `<table>`. **Warning:** Avoid mixing quotes to prevent shortcode errors. | _(Required)_    |
+| **`search_mode`**              | Match all conditions (`all`, default) or any condition (`any`).                                                                                                                              | `all`           |
+| **`greater_than`**             | Filter numeric values greater than a threshold, e.g., `greater_than="4, 1000"`.                                                                                                              | _(None)_        |
+| **`less_than`**                | Filter numeric values less than a threshold, e.g., `less_than="6, 50"`.                                                                                                                      | _(None)_        |
+| **`sort_key`**                 | Field/property to sort entries (e.g., field ID or meta key).                                                                                                                                 | `id` (entry ID) |
+| **`sort_direction`**           | Sorting direction: `ASC`, `DESC`, or `RAND`.                                                                                                                                                 | `DESC`          |
+| **`sort_is_num`**              | Indicates if sorting is numeric (true/false).                                                                                                                                                | `true`          |
+| **`secondary_sort_key`**       | Secondary sorting field (if needed).                                                                                                                                                         | (empty)         |
+| **`secondary_sort_direction`** | Sorting direction for the secondary sort (ASC, DESC).                                                                                                                                        | `DESC`          |
+| **`unique`**                   | Display only unique values in the results.                                                                                                                                                   | `false`         |
+| **`limit`**                    | Number of results to display. Use `limit="all"` to display all entries.                                                                                                                      | `1`             |
+| **`separator`**                | Separator between results (supports HTML).                                                                                                                                                   | _(Varies)_      |
+| **`search_empty`**             | Search for fields with empty/blank values.                                                                                                                                                   | `false`         |
+| **`default`**                  | Default text to display if no results match search criteria.                                                                                                                                 | _(Blank)_       |
+| **`link`**                     | Makes results clickable links to admin entry details.                                                                                                                                        | `false`         |
 
-- Field IDs, entry properties, or meta keys can be used in `search` and `display`.
-- Limited HTML is allowed in `display` and `separator`.
-- For Gravity View, use `{gfs:key}` format for non-numeric keys.
 
-## License
+### 🧩 Examples
+#### Example 1: Search and Display Multiple Fields
+``` markdown
+[gfsearch target="2" search="name,email" display="Name: {13}, Email: {14}" search_mode="all" limit="10"]
+John|john@example.com
+[/gfsearch]
+```
+#### Example 2: Display Unique Results with Links
+``` markdown
+[gfsearch target="3" display="Unique Entry: {created_by}" unique="true" link="true"]
+```
+#### Example 3: Global Search with Custom HTML
+``` markdown
+[gfsearch target="0" display="<li>ID: {id}, Value: {13}" separator="</li>"]
+```
+Wrap the above shortcode within `<ul>` tags:
+``` html
+<ul>
+  [gfsearch target="0" display="<li>ID: {id}, Value: {13}" separator="</li>"]
+</ul>
+```
+## ❗ Notes and Best Practices
+- Always ensure placeholders (e.g., `{13}`) match the field IDs or entry properties.
+- Use prefix for non-numeric keys when used alongside **Gravity View**. `{gfs:id}`
+- Avoid using double quotes (`"`) inside the `display` attribute if your shortcode is wrapped with double quotes—use single quotes (`'`) instead, and vice versa.
 
-GPLv2 or later.
+## 📜 License
+This plugin is licensed under **GPLv2 or later**.
+## 🔗 Links
+- Plugin Repo: [GitHub - Eitan-brightleaf/gfsearch](https://github.com/Eitan-brightleaf/gfsearch)
+- Gravity Forms Documentation: [Gravity Forms Entry Object](https://docs.gravityforms.com/entry-object/)
