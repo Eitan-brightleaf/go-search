@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: gfsearch
- * Plugin URI:
+ * Plugin URI: https://github.com/Eitan-brightleaf/gfsearch
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
  * Version: 1.0.1
  * Author: BrightLeaf Digital
@@ -21,84 +21,12 @@ add_action(
  * Processes the gfsearch shortcode to perform searching and displaying Gravity Forms entries
  * based on specified criteria and attributes.
  *
- * Notes:
- * This method allows searching for specific forms, multiple forms, or all forms. Custom formatting,
- * sorting, filtering, limiting results, and handling specific search conditions is supported.
- * Detailed formatting instructions are outlined above.
- *
- * Supported attributes include search fields, result limits, sorting directions, numeric comparisons,
- * and unique results handling.
- *
  * @param array  $atts An associative array of attributes, or default values.
- *
  * @param string $content Content of the shortcode, typically search values separated by '|'.
  *
  * @return string|false Formatted search results or false if search fails due to missing attributes or invalid setup.
  */
 function gfsearch_shortcode( $atts, $content = null ) {
-	/**
-	 * Notes:
-	 *
-	 * For the target use 0 to search all forms or a form ID to search a specific form or a comma separated list of form IDs to
-	 * search the specified forms.
-	 *
-	 * You can pass multiple id's to the search and display attributes, separated by a comma, in order to search or display multiple fields. If you are searching
-	 * for multiple fields enter the corresponding value as the content for the shortcode with each value to search for separated by a | symbol. Make sure you have the
-	 * same amount of values as fields you are searching and make sure they are in the same order.
-	 *
-	 * If you want custom formating for the display: Configure the attribute with the format you would like for the display and surround each entry property by curly braces
-	 * i.e. display="This is example text before one field: {13} and this is some more ({14}), and this-{15} is the last field!). Each id {13}, {14}, and {15} will be replaced by
-	 * the correct value and the rest of the string will stay the same. Just make sure not to enter any characters that would break the shortcode such as " or []. Limited HTML is allowed.
-	 * Any entry property key can be used as a placeholder to be replaced with the value. For example, you can use {id} or {created_by} or a field id {13}, etc. See https://docs.gravityforms.com/entry-object/.
-	 *
-	 * When using this shortcode with Gravity View, you may need to prefix non-numeric keys with "gfs:" to prevent Gravity View from parsing them as merge tags.
-	 * For example, use {gfs:id} instead of {id} when working with Gravity View. Both formats are supported by this shortcode.
-	 *
-	 * The search and display fields can be a field ID, entry property, or entry meta key.
-	 *
-	 * If you are searching for multiple values (fields) in the same entry you can use the search_mode attribute to determine if the entry must meet all the conditions
-	 * or not. Default is all conditions. If you pass in the value any (search_mode="any") then the result will be returned if any condition matches.
-	 *
-	 * To perform a global search on the form for any field with the specified value, leave the corresponding search id blank. To just display the values from a field leave out the search attribute and the
-	 * shortcode content.
-	 *
-	 * To check for multiple values for one field enter the field multiple times in the search attribute, with the desired values separated by a comma as the shortcode content and set the
-	 * search_mode attribute to "any".
-	 *
-	 * If you would like to search for results where the value is greater or less than the provided search value use the greater_than or less_than attributes.
-	 * The attribute expects the field id first and then the number to filter by separated by a space and comma. For example greater_than="4, 500" will filter out
-	 * all entries where field 4 has a value of less than 500.
-	 *
-	 * If you want to sort the entries use the sort_key, sort_direction, and sort_is_num. <br>
-	 * sort_key: The field ID, entry property, or entry meta key to sort the results. <br>
-	 * sort_direction: The direction to sort the results. Can be ASC, DESC, or RAND. Case-insensitive. Default is DESC <br>
-	 * sort_is_num: Indicates if the values of the specified key are numeric. Should be used in conjunction with the sort_key attribute. Default is true.
-	 *              To set to false use the string false (sort_is_num="false") or an empty value such as 0 or an empty string.
-	 *
-	 * If you want to have a secondary sort within the first use the secondary_sort_key and secondary_sort_direction attributes. They work similar to the primary sorting attributes, the only difference being
-	 * there is no random option for the sorting direction. There is also no "is_numeric" attribute. It is unnecessary here. Note also this attribute will be ignored if the primary sort direction is RAND.
-	 *
-	 * If you only want unique values use the attribute unique and give it any value (aside from 0 or an empty string).
-	 *
-	 * If you want to return a specific amount of results use the limit attribute. The default is one result. If you want to display all the results use the
-	 * value 'all' (limit="all"), case-insensitive. If you enter a number greater than the total amount of results all of them will be returned. If you enter 0 or an empty string
-	 * the default value will be used.
-	 *
-	 * You can specify the separator between results with the separator attribute (i.e. separator=&lt;br&gt;). Limited HTML (such as &lt;br&gt;) is allowed here.
-	 *
-	 * If you want to search for empty values, meaning where the specified field in the search attribute is empty, leave the content of the shortcode blank
-	 * and use the search_empty attribute. You can give it any non-empty value (0, empty string, etc.). The default is false so if there is a search field
-	 * with no value nothing will be returned.
-	 *
-	 * If you want to specify a default value to display when no results are found, use the default attribute (i.e. default="No results found").
-	 * This value will be displayed if either no entries match the search criteria or if all entries are filtered out during processing.
-	 * The default value is also used for individual blank values within entries. For example, if multiple entries are returned and some have
-	 * values for the display fields while others don't, or if multiple fields are being displayed and some have values while others don't,
-	 * the default value will be used for those individual blank values.
-	 *
-	 * If you want to turn each result into a link to the relevant entry in the admin panel, use the link attribute with any non-empty value
-	 * (i.e. link="true"). This will wrap each result in an HTML anchor tag that links to the entry view page in the WordPress admin.
-	 */
 
 	$result = apply_filters( 'gogv_shortcode_process', $content );
 	if ( $result !== $content ) {
