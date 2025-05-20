@@ -78,7 +78,7 @@ Wrap the above shortcode within `<ul>` tags:
     </thead>
     <tbody>
     [gfsearch target="1" search="3,5" display="<tr><td>{1}</td><td><a href='mailto:{2}'>{2}</a></td><td><a href='{6}&query={10}'>{6}&query={10}</a></td>" separator="</tr>"]
-    John Doe | Pizza
+    John Doe | john@example.com
     [/gfsearch]
     </tbody>
   </table>
