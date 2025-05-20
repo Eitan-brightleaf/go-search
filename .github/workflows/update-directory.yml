@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Pandoc
-        run: sudo apt update && sudo apt install -y pandoc
+        uses: r-lib/actions/setup-pandoc@v2
 
       - name: Convert readme to html
         run: pandoc readme.md -o readme.html

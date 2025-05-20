@@ -128,6 +128,7 @@ Instead <br>
 
 ## Installation
 This shortcode can be installed as a snippet or as a plugin.
+
 ### As a Plugin
 [Download the zip](https://github.com/Eitan-brightleaf/gfsearch/archive/refs/heads/main.zip) and install in the WP admin dashboard.
 
@@ -137,6 +138,7 @@ and install in your themes functions.php file or with your favorite code snippet
 
 ## 📜 License
 This plugin is licensed under **GPLv2 or later**.
+
 ## 🔗 Links
 - [Plugin Repo](https://github.com/Eitan-brightleaf/gfsearch)
 - [In the BL Digital Snippet Directory](https://digital.brightleaf.info/code/entry/44-gfsearch-shortcode/)
