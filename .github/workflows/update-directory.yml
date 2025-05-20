@@ -32,10 +32,9 @@ jobs:
 
       - name: Inject HTML into field 3
         run: |
-          HTML_CONTENT=$(< readme.html)
-          # escape line breaks and double quotes for JSON
-          ESCAPED=$(printf "%s" "$HTML_CONTENT" | jq -Rs .)
-          jq --arg html "$ESCAPED" '.["3"] = $html | with_entries(select(.value != null))' entry.json > updated_entry.json
+          HTML_CLEAN=$(sed 's/"/\\"/g' README.html)
+          jq --arg html "$HTML_CLEAN" '.["3"] = $html' entry.json > updated_entry.json
+
 
       - name: Send updated entry back
         env:
