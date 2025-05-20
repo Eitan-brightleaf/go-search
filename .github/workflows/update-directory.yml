@@ -1,6 +1,5 @@
 name: update-directory.yml
 on:
-  workflow_dispatch: # manual
   push:
     branches:
       - main
@@ -12,60 +11,17 @@ jobs:
   updateDescription:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
-        uses: actions/checkout@v4
-
-      - name: Install Pandoc
-        uses: r-lib/actions/setup-pandoc@v2
-
-      - name: Convert readme to html
-        run: pandoc readme.md -o readme.html
-
-      - name: Upload HTML as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: README-HTML
-          path: readme.html
-
-      - name: Fetch Entry via Gravity Forms API
+      - name: submit form
         env:
-          GF_API_URL: ${{ secrets.ENTRY_URL }}
-          GF_BASIC_AUTH: ${{ secrets.GF_BASIC_AUTH }}
+          GF_API_URL: ${{ secrets.GF_UPDATE_WEBHOOK_URL }}
+          COMMIT_MESSAGE: "${{ github.event.head_commit.message }}"
         run: |
-          curl -s -H "Authorization: Basic $GF_BASIC_AUTH" \
-               "$GF_API_URL" \
-               -o entry.json
-      
-      - name: save entry.json as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: entry-json-pre
-          path: entry.json
 
-      - name: Inject HTML into field 3
-        run: |
-          HTML_CONTENT=$(< readme.html)
-          # Escape double quotes and backslashes for JSON
-          ESCAPED_HTML=$(printf '%s' "$HTML_CONTENT" | sed 's/\\/\\\\/g; s/"/\\"/g')
-          jq ".\"3\" = \"$ESCAPED_HTML\"" entry.json > updated_entry.json
+          JSON_PAYLOAD=$(jq -n \
+                --arg commit_msg "$COMMIT_MESSAGE" \
+                '{input_1: "GFSearch Shortcode", input_3: $commit_msg}')
 
-      - name: save updated_entry.json as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: entry-json-post
-          path: updated_entry.json
-
-
-      # - name: Send updated entry back
-      #   env:
-      #     GF_API_URL: ${{ secrets.ENTRY_URL }}
-      #     GF_BASIC_AUTH: ${{ secrets.GF_BASIC_AUTH }}
-      #   run: |
-      #     curl -X PUT \
-      #          -H "Authorization: Basic $GF_BASIC_AUTH" \
-      #          -H "Content-Type: application/json" \
-      #          --data @updated_entry.json \
-      #          "$GF_API_URL"
-
-
-# TODO edit entry with new description and submit form that snippet was updated
+          curl -X POST "$GF_API_URL" \
+                -H "Content-Type: application/json" \
+                -d "$JSON_PAYLOAD"
+                
