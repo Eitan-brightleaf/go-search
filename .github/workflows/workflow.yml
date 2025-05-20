@@ -8,14 +8,11 @@ jobs:
     steps:
       - name: Fetch Entry via Gravity Forms API
         env:
-          GF_API_URL: ${{ secrets.GF_API_URL }} # https://yourdomain.com/wp-json/gf/v2
-          GF_BASIC_AUTH: ${{ secrets.GF_BASIC_AUTH }} # base64 of consumer_key:consumer_secret
-          FORM_ID: "2"
-          ENTRY_ID: "44"
+          GF_API_URL: ${{ secrets.ENTRY_URL }}
+          GF_BASIC_AUTH: ${{ secrets.GF_BASIC_AUTH }}
         run: |
-          echo "Fetching entry $ENTRY_ID from form $FORM_ID"
           curl -s -H "Authorization: Basic $GF_BASIC_AUTH" \
-               "$GF_API_URL/forms/$FORM_ID/entries/$ENTRY_ID" \
+               "$GF_API_URL" \
                -o entry.json
 
           echo "Entry contents:"
