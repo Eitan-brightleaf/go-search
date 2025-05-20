@@ -19,7 +19,7 @@ jobs:
         uses: r-lib/actions/setup-pandoc@v2
 
       - name: Convert readme to html
-        run: pandoc readme.md -o readme.html
+        run: pandoc readme.md -f gfm -t html -s -o readme.html --no-highlight
 
       - name: Upload HTML as artifact
         uses: actions/upload-artifact@v4
