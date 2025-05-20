@@ -50,17 +50,23 @@ John|john@example.com
 
 
 ### 🧩 Examples
+
 #### Example 1: Search and Display Multiple Fields
+
 ```markdown
 [gfsearch target="2" search="name,email" display="Name: {13}, Email: {14}" search_mode="all" limit="10"]
 John|john@example.com
 [/gfsearch]
 ```
+
 #### Example 2: Display Unique Results with Links
+
 ```markdown
 [gfsearch target="3" display="Unique Entry: {created_by}" unique="true" link="true"]
 ```
+
 #### Example 3: Global Search with Custom HTML
+
 ```markdown
 [gfsearch target="0" display="<li>ID: {id}, Value: {13}" separator="</li>"]
 ```
@@ -70,6 +76,7 @@ Wrap the above shortcode within `<ul>` tags:
   [gfsearch target="0" display="<li>ID: {id}, Value: {13}" separator="</li>"]
 </ul>
 ```
+
 #### Example 4: Creating an HTML table with links
 ```html
   <table>
@@ -84,7 +91,9 @@ Wrap the above shortcode within `<ul>` tags:
   </table>
 ```
 You can create links to anywhere you want, including other views or parts of this view!
+
 #### Example 5: Secondary Search
+
 ```markdown
   [gfsearch target="2" display="13" sort_key="date_created" secondary_sort_key="name" secondary_sort_direction="ASC"]
 ```
