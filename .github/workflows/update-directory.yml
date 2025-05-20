@@ -19,7 +19,13 @@ jobs:
         uses: r-lib/actions/setup-pandoc@v2
 
       - name: Convert readme to html
-        run: pandoc readme.md -f gfm -t html -s -o readme.html --no-highlight
+        run: pandoc readme.md -o readme.html
+
+      - name: Upload HTML as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: README-HTML
+          path: readme.html
 
       - name: Fetch Entry via Gravity Forms API
         env:
@@ -29,6 +35,12 @@ jobs:
           curl -s -H "Authorization: Basic $GF_BASIC_AUTH" \
                "$GF_API_URL" \
                -o entry.json
+      
+      - name: save entry.json as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: entry-json-pre
+          path: entry.json
 
       - name: Inject HTML into field 3
         run: |
@@ -37,17 +49,23 @@ jobs:
           ESCAPED_HTML=$(printf '%s' "$HTML_CONTENT" | sed 's/\\/\\\\/g; s/"/\\"/g')
           jq ".\"3\" = \"$ESCAPED_HTML\"" entry.json > updated_entry.json
 
+      - name: save updated_entry.json as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: entry-json-post
+          path: updated_entry.json
 
-      - name: Send updated entry back
-        env:
-          GF_API_URL: ${{ secrets.ENTRY_URL }}
-          GF_BASIC_AUTH: ${{ secrets.GF_BASIC_AUTH }}
-        run: |
-          curl -X PUT \
-               -H "Authorization: Basic $GF_BASIC_AUTH" \
-               -H "Content-Type: application/json" \
-               --data @updated_entry.json \
-               "$GF_API_URL"
+
+      # - name: Send updated entry back
+      #   env:
+      #     GF_API_URL: ${{ secrets.ENTRY_URL }}
+      #     GF_BASIC_AUTH: ${{ secrets.GF_BASIC_AUTH }}
+      #   run: |
+      #     curl -X PUT \
+      #          -H "Authorization: Basic $GF_BASIC_AUTH" \
+      #          -H "Content-Type: application/json" \
+      #          --data @updated_entry.json \
+      #          "$GF_API_URL"
 
 
 # TODO edit entry with new description and submit form that snippet was updated
