@@ -3,7 +3,7 @@ A powerful and flexible Gravity Forms search and display shortcode for WordPress
 
 ## 📝 Description
 The **GFSearch** shortcode enables advanced searching and displaying of Gravity Forms entries on your posts, pages, 
-Gravity Views, or custom templates. It allows filtering results, sorting entries, custom formatting, and much more—all 
+Gravity Views, or custom templates. It functions similarly to an Excel **VLOOKUP**, allows filtering results, sorting entries, custom formatting, and much more—all 
 tailored to your exact needs.
 
 ## ✨ Key Features
