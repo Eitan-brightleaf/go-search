@@ -133,8 +133,7 @@ This shortcode can be installed as a snippet or as a plugin.
 
 ### As a snippet
 Copy the code [here](https://raw.githubusercontent.com/Eitan-brightleaf/gfsearch/refs/heads/main/gfsearch.php?token=GHSAT0AAAAAADCYGWKL3KTFURKPP3WA2CCG2BMJXXQ)
-and install in your themes functions.php file or with using a code snippets
-plugin.
+and install in your themes functions.php file or with your favorite code snippets plugin.
 
 ## 📜 License
 This plugin is licensed under **GPLv2 or later**.
