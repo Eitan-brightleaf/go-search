@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - .github
+      - '.github/**'
       - .gitignore
 
 jobs:
@@ -20,12 +20,6 @@ jobs:
 
       - name: Convert readme to html
         run: pandoc readme.md -f gfm -t html -s -o readme.html --no-highlight
-
-      - name: Upload HTML as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: README-HTML
-          path: readme.html
 
 
 # TODO edit entry with new description and submit form that snippet was updated
