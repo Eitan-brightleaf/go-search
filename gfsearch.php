@@ -149,6 +149,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			if ( is_numeric( $atts['limit'] ) && count( $entries ) > $atts['limit'] ) {
 				break;
 			}
+			$count = count( $entries );
 		}
 		if ( is_numeric( $atts['limit'] ) ) {
 			$entries = array_slice( $entries, 0, intVal( $atts['limit'] ) );
