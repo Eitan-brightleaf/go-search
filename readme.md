@@ -28,25 +28,25 @@ John|john@example.com
 ```
 ### Attributes Overview
 
-| **Attribute**                  | **Description**                                                                                                                   | **Default**     |
-|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|-----------------|
-| **`target`**                   | Specify forms to search: `0` for all forms, or comma-separated list of form IDs (e.g., `target="1,2"`).                           | (all forms) `0` |
-| **`search`**                   | Field IDs/entry properties for filtering entries. Separate multiple IDs by a comma (`search="13,14"`).                            | _(None)_        |
-| **`display`**                  | Comma seperated list of field IDs/entry properties to display. Also allows formating results with placeholders.                   | _(Required)_    |
-| **`search_mode`**              | Match all conditions (`all`, default) or any condition (`any`).                                                                   | `all`           |
-| **`greater_than`**             | Filter numeric values greater than a threshold, e.g., `greater_than="4, 1000"` where 4 is the field ID and 1000 is the threshold. | _(None)_        |
-| **`less_than`**                | Filter numeric values less than a threshold, e.g., `less_than="6, 50"` where 6 is the field ID and 50 is the threshold.           | _(None)_        |
-| **`sort_key`**                 | Field/property to sort entries (e.g., field ID or meta key).                                                                      | `id` (entry ID) |
-| **`sort_direction`**           | Sorting direction: `ASC`, `DESC`, or `RAND`.                                                                                      | `DESC`          |
-| **`sort_is_num`**              | Indicates if sorting is numeric (true/false).                                                                                     | `true`          |
-| **`secondary_sort_key`**       | Secondary sorting field (if needed).                                                                                              | (empty)         |
-| **`secondary_sort_direction`** | Sorting direction for the secondary sort (ASC, DESC).                                                                             | `DESC`          |
-| **`unique`**                   | Display only unique values in the results.                                                                                        | `false`         |
-| **`limit`**                    | Number of results to display. Use `limit="all"` to display all entries.                                                           | `1`             |
-| **`separator`**                | Separator between results (supports HTML).                                                                                        | _(Varies)_      |
-| **`search_empty`**             | Search for fields with empty/blank values.                                                                                        | `false`         |
-| **`default`**                  | Default text to display if no results match search criteria.                                                                      | _(Blank)_       |
-| **`link`**                     | Makes results clickable links to admin entry details.                                                                             | `false`         |
+| **Attribute**                  | **Description**                                                                                                                                                  | **Default**     |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| **`target`**                   | Specify forms to search: `0` for all forms, or comma-separated list of form IDs (e.g., `target="1,2"`).                                                          | (all forms) `0` |
+| **`search`**                   | Field IDs/entry properties for filtering entries. Separate multiple IDs by a comma (`search="13,14"`).                                                           | _(None)_        |
+| **`display`**                  | Comma seperated list of field IDs/entry properties to display. Also allows formating results with placeholders.                                                  | _(Required)_    |
+| **`search_mode`**              | Match all conditions (`all`, default) or any condition (`any`).                                                                                                  | `all`           |
+| **`greater_than`**             | Filter numeric values greater than a threshold, e.g., `greater_than="4, 1000"` where 4 is the field ID and 1000 is the threshold.                                | _(None)_        |
+| **`less_than`**                | Filter numeric values less than a threshold, e.g., `less_than="6, 50"` where 6 is the field ID and 50 is the threshold.                                          | _(None)_        |
+| **`sort_key`**                 | Field/property to sort entries (e.g., field ID or meta key).                                                                                                     | `id` (entry ID) |
+| **`sort_direction`**           | Sorting direction: `ASC`, `DESC`, or `RAND`.                                                                                                                     | `DESC`          |
+| **`sort_is_num`**              | Indicates if sorting is numeric (true/false).                                                                                                                    | `true`          |
+| **`secondary_sort_key`**       | Secondary sorting field (if needed).                                                                                                                             | (empty)         |
+| **`secondary_sort_direction`** | Sorting direction for the secondary sort (ASC, DESC).                                                                                                            | `DESC`          |
+| **`unique`**                   | Display only unique values in the results.                                                                                                                       | `false`         |
+| **`limit`**                    | Number of results to display. Use `limit="all"` to display all entries.                                                                                          | `1`             |
+| **`separator`**                | Separator between results (supports HTML).                                                                                                                       | _(Varies)_      |
+| **`search_empty`**             | Search for fields with empty/blank values.                                                                                                                       | `false`         |
+| **`default`**                  | Default text to display if no results match search criteria. Can input multiple values corresponding to each `display` value, seperated by a double pipe symbol. | _(Blank)_       |
+| **`link`**                     | Makes results clickable links to admin entry details.                                                                                                            | `false`         |
 
 
 ### 🧩 Examples
