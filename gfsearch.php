@@ -157,7 +157,9 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	}
 
 	if ( empty( $entries ) ) {
-		return wp_kses_post( $atts['default'] );
+		// If default contains multiple values, use the first one
+		$default_values = array_map( 'trim', explode( '||', $atts['default'] ) );
+		return wp_kses_post( $default_values[0] ?? '' );
 	}
 
 	if ( ! empty( $secondary_sort_key ) && 'RAND' !== $sorting['direction'] ) {
@@ -258,9 +260,14 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	}
 
 	$multi_input_present = false;
+
+	// Parse default values
+	$default_values = array_map( 'trim', explode( '||', $atts['default'] ) );
+	$default_count  = count( $default_values );
+
 	foreach ( $entries as $entry ) {
 		$entry_results = [];
-		foreach ( $display_ids as $display_id ) {
+		foreach ( $display_ids as $index => $display_id ) {
 
 			$field = GFAPI::get_field( $entry['form_id'], $display_id );
 			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
@@ -284,7 +291,14 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 			// Use default value if field value is empty
 			if ( '' === $field_value || is_null( $field_value ) ) {
-				$field_value = wp_kses_post( $atts['default'] );
+				// If there's only one default value, use it for all display values
+				if ( 1 === $default_count ) {
+					$field_value = wp_kses_post( $default_values[0] );
+				} elseif ( $index < $default_count ) { // If there are multiple default values, use the corresponding one or empty string if not available
+					$field_value = wp_kses_post( $default_values[ $index ] );
+				} else {
+					$field_value = '';
+				}
 			}
 
 			$entry_results[ $display_id ] = $field_value;
@@ -325,7 +339,9 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	$results = array_filter( $results, fn( $value ) => '' !== $value && ! is_null( $value ) );
 
 	if ( empty( $results ) ) {
-		return wp_kses_post( $atts['default'] );
+		// If default contains multiple values, use the first one
+		$default_values = array_map( 'trim', explode( '||', $atts['default'] ) );
+		return wp_kses_post( $default_values[0] ?? '' );
 	}
 
 	if ( empty( $atts['separator'] ) ) {
