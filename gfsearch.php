@@ -3,7 +3,7 @@
  * Plugin Name: gfsearch
  * Plugin URI: https://github.com/Eitan-brightleaf/gfsearch
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
@@ -239,24 +239,29 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	$results = [];
 
-	$regex = '/{(gfs:)?([^{}]+)}/';
+	$regex = '/{(gfs:)?([^{};]+)(;([^{}]+))?}/';
 	preg_match_all( $regex, $atts['display'], $matches );
 
 	if ( empty( $matches[0] ) ) {
-		$display_ids = array_map( 'sanitize_text_field', explode( ',', $atts['display'] ) );
-		$display_ids = array_map( 'trim', $display_ids );
+		$display_ids  = array_map( 'sanitize_text_field', explode( ',', $atts['display'] ) );
+		$display_ids  = array_map( 'trim', $display_ids );
+		$tag_defaults = [];
 	} else {
-		// Extract the actual IDs, removing the prefix if present
-		$display_ids = array_map(
-				function ( $individual_match ) {
-					// Remove the curly braces
-					$content = str_replace( [ '{', '}' ], '', $individual_match );
-					// Remove the gfs: prefix if present
-					return str_replace( 'gfs:', '', $content );
-				},
-            $matches[0]
-		);
-		$display_ids = array_map( 'sanitize_text_field', $display_ids );
+		// Extract the actual IDs and default values, removing the prefix if present
+		$display_ids  = [];
+		$tag_defaults = [];
+
+		foreach ( $matches[0] as $index => $match ) {
+			// Get the field ID
+			$field_id = $matches[2][ $index ];
+
+			// Store the default value if present
+			if ( ! empty( $matches[4][ $index ] ) ) {
+				$tag_defaults[ $field_id ] = $matches[4][ $index ];
+			}
+
+			$display_ids[] = sanitize_text_field( $field_id );
+		}
 	}
 
 	$multi_input_present = false;
@@ -291,10 +296,14 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 			// Use default value if field value is empty
 			if ( '' === $field_value || is_null( $field_value ) ) {
-				// If there's only one default value, use it for all display values
-				if ( 1 === $default_count ) {
+				// Check if there's a tag-specific default value for this field
+				if ( isset( $tag_defaults[ $display_id ] ) ) {
+					$field_value = wp_kses_post( $tag_defaults[ $display_id ] );
+				} elseif ( 1 === $default_count ) { // Otherwise use the global default values
+					// If there's only one default value, use it for all display values
 					$field_value = wp_kses_post( $default_values[0] );
-				} elseif ( $index < $default_count ) { // If there are multiple default values, use the corresponding one or empty string if not available
+				} elseif ( $index < $default_count ) {
+					// If there are multiple default values, use the corresponding one
 					$field_value = wp_kses_post( $default_values[ $index ] );
 				} else {
 					$field_value = '';
@@ -311,11 +320,19 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		if ( ! empty( $matches[0] ) ) {
 			$display_format = wp_kses( $atts['display'], $allowed_tags );
 			foreach ( $display_ids as $display_id ) {
-				// Replace both {id} and {gfs:id} formats with the value
+				// Replace all formats with the value: {id}, {gfs:id}, and {gfs:id;default-value}
 				// If the field was filtered out (because default was empty), use empty string
-				$value          = $entry_results[ $display_id ] ?? '';
+				$value = $entry_results[ $display_id ] ?? '';
+
+				// Replace simple {id} format
 				$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
+
+				// Replace {gfs:id} format
 				$display_format = str_replace( '{gfs:' . $display_id . '}', $value, $display_format );
+
+				// Replace {gfs:id;default-value} format
+				$pattern        = '/{(gfs:)?' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+				$display_format = preg_replace( $pattern, $value, $display_format );
 			}
 			$result_text = $display_format;
 			if ( $atts['link'] ) {

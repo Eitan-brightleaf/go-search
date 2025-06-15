@@ -113,6 +113,9 @@ You can create links to anywhere you want, including other views or parts of thi
 Instead <br>
 `display="<a href='example.com'>{3}</a>"`
 
+- You can set a default value per merge tag basis by prefixing the merge tag with gfs and closing with semicolon and the default value.
+  For example `{gfs:Name 5;No Name Found}` or `{gfs:created_by;Current User}` or `{gfs:phone;Not Available}`
+
 - The search and display attributes both support entry properties and field IDs. See [Gravity Forms Entry Object](https://docs.gravityforms.com/entry-object/).
 
 - Leave a search ID blank to search any field for the specified value.
