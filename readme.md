@@ -138,6 +138,11 @@ Instead <br>
 
 - Use the `link` attribute with any non-empty value to wrap each result in a link to the entry view page in the WordPress admin.
 
+- If you want to see all the entry meta available as keys for the `search` and `display` attributes pass in 
+`meta` to the display key and the shortcode will return all the available meta-keys for that entry. By default, they will
+be displayed in an unordered HTML list. If want to customize that, you can use the `separator` attribute to determine how
+the values are formated.
+
 ## Installation
 This shortcode can be installed as a snippet or as a plugin.
 

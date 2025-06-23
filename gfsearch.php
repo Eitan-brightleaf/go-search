@@ -91,7 +91,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			continue;
 		}
 		$current_field = GFAPI::get_field( $form_id[0], $search_id );
-		if ( 'number' === $current_field['type'] ) {
+		if ( $current_field && 'number' === $current_field['type'] ) {
 			$content_values[ $index ] = str_replace( ',', '', $content_values[ $index ] );
 		}
 		$search_criteria['field_filters'][] = [
@@ -273,6 +273,15 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	foreach ( $entries as $entry ) {
 		$entry_results = [];
 		foreach ( $display_ids as $index => $display_id ) {
+
+			if ( 'meta' === $display_id ) {
+				if ( ! empty( wp_kses_post( $atts['separator'] ) ) ) {
+					$entry_results[ $display_id ] = implode( wp_kses_post( $atts['separator'] ), array_keys( $entry ) );
+				} else {
+					$entry_results[ $display_id ] = '<ul><li>' . implode( '</li><li>', array_keys( $entry ) ) . '</li></ul>';
+				}
+				continue;
+			}
 
 			$field = GFAPI::get_field( $entry['form_id'], $display_id );
 			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
