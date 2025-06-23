@@ -141,7 +141,7 @@ Instead <br>
 - If you want to see all the entry meta available as keys for the `search` and `display` attributes pass in 
 `meta` to the display key and the shortcode will return all the available meta-keys for that entry. By default, they will
 be displayed in an unordered HTML list. If you want to customize that, you can use the `separator` attribute to determine how
-the values are formated.
+the values are formatted.
 
 ## Installation
 This shortcode can be installed as a snippet or as a plugin.
