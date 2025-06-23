@@ -143,6 +143,16 @@ Instead <br>
 be displayed in an unordered HTML list. If you want to customize that, you can use the `separator` attribute to determine how
 the values are formatted.
 
+- You can pass shortcodes into the `display` attribute by wrapping them in double curly braces. This works for 
+self-closing shortcodes and shortcodes with a closing tag. Attributes can be used in the shortcodes.
+For example
+`[gfsearch display="This is an example: Entry ID: {gfs:id} Sum: {{gravitymath}}2+2{{/gravitymath}} Nested search:{{gfsearch display='23'}}"]`
+The content of the shortcode will be used in the display string. It can be used as an id of something to display,
+for example `[gfsearch search='1' display="{{gravitymath}}2+2{{/gravitymath}}"]Example[/gfsearch]` will display the value
+of field 4 in the retrieved entry. Or it can be used as part of the display string as in the above example.
+You can also wrap it in another pair of curly braces to be used as a search ID in a display string as follows:
+`[gfsearch display="This is an example: Field Value: {{{gravitymath}}2+2{{/gravitymath}}}"]`
+
 ## Installation
 This shortcode can be installed as a snippet or as a plugin.
 

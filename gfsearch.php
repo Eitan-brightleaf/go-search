@@ -238,6 +238,26 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	$results = [];
 
+	// First, parse paired shortcodes like {{shortcode ...}}...{{/shortcode}}
+	$atts['display'] = preg_replace_callback(
+		'/\{\{(\w+)([^{}]*)\}\}(.*?)\{\{\/\1\}\}/s',
+		function ( $m ) {
+			// Construct actual shortcode string
+			$shortcode = '[' . $m[1] . $m[2] . ']' . $m[3] . '[/' . $m[1] . ']';
+			return do_shortcode( $shortcode );
+		},
+		$atts['display']
+	);
+
+	// Then parse standalone/self-closing shortcodes like {{shortcode attr='val'}}
+	$atts['display'] = preg_replace_callback(
+		'/\{\{(\w+[^\{\}\/]*)\}\}/',
+		function ( $m ) {
+			return do_shortcode( '[' . $m[1] . ']' );
+		},
+		$atts['display']
+	);
+
 	$regex = '/{(gfs:)?([^{};]+)(;([^{}]+))?}/';
 	preg_match_all( $regex, $atts['display'], $matches );
 
@@ -284,11 +304,11 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 			$field = GFAPI::get_field( $entry['form_id'], $display_id );
 			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-			if ( 'number' === $field->type ) {
+			if ( $field && 'number' === $field->type ) {
 				$field_value = GFCommon::format_number( $entry[ $display_id ], $field->numberFormat, $entry['currency'], true );
-			} elseif ( 'date' === $field->type ) {
+			} elseif ( $field && 'date' === $field->type ) {
 				$field_value = GFCommon::date_display( $entry[ $display_id ], 'Y-m-d', $field->dateFormat );
-			} elseif ( is_multi_input_field( $field ) ) {
+			} elseif ( $field && is_multi_input_field( $field ) ) {
 				$multi_input_present = true;
 				$ids                 = array_column( $field['inputs'], 'id' );
 				$field_results       = [];
