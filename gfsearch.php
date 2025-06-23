@@ -1,7 +1,6 @@
 <?php
 /**
  * Plugin Name: gfsearch
- * Plugin URI: https://github.com/Eitan-brightleaf/gfsearch
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
  * Version: 1.0.3
  * Author: BrightLeaf Digital
