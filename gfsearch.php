@@ -2,15 +2,15 @@
 /**
  * Plugin Name: gfsearch
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
- * Version: 1.0.4
+ * Version: 1.0.4.1
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
  */
 
 add_action(
-    'init',
-    function () {
+	'init',
+	function () {
 		add_shortcode( 'gfsearch', 'gfsearch_shortcode' );
 	}
 );
@@ -32,7 +32,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	}
 
 	$atts = shortcode_atts(
-        [
+		[
 			'target'                   => '0',
 			'search'                   => '',
 			'greater_than'             => false,
@@ -53,7 +53,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		],
 		$atts,
 		'gfsearch'
-        );
+	);
 
 	// Allow everything wp_kses_post allows plus <a> and its attributes
 	$allowed_tags      = wp_kses_allowed_html( 'post' );
@@ -138,12 +138,8 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	if ( 'all' === $atts['limit'] || intVal( $atts['limit'] ) > 25 ) {
 		$count = count( $entries );
 		while ( $total_count > $count ) {
-			$paging_offset += 25;
-			$paging         = [
-				'offset'    => $paging_offset,
-				'page_size' => 25,
-			];
-			$new_entries    = GFAPI::get_entries( $form_id, $search_criteria, $sorting, $paging, $total_count );
+			$paging['offset'] += 25;
+			$new_entries       = GFAPI::get_entries( $form_id, $search_criteria, $sorting, $paging, $total_count );
 			array_push( $entries, ...$new_entries ); // $entries = array_merge( $entries, $new_entries );
 			if ( is_numeric( $atts['limit'] ) && count( $entries ) > $atts['limit'] ) {
 				break;
@@ -171,8 +167,8 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		// Sort each group based on the secondary sort key
 		foreach ( $grouped_entries as &$group ) {
 			usort(
-                $group,
-                function ( $entry1, $entry2 ) use ( $secondary_sort_key, $secondary_sort_direction ) {
+				$group,
+				function ( $entry1, $entry2 ) use ( $secondary_sort_key, $secondary_sort_direction ) {
 					$value1 = $entry1[ $secondary_sort_key ] ?? '';
 					$value2 = $entry2[ $secondary_sort_key ] ?? '';
 
@@ -195,7 +191,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 					return $value2 <=> $value1; // Descending order for numbers
 				}
-                );
+			);
 		}
 
 		unset( $group ); // Clean up the reference variable to avoid potential bugs
@@ -214,49 +210,31 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	if ( $atts['greater_than'] ) {
 		$greater_than = array_map( 'trim', explode( ',', $atts['greater_than'] ) );
 		$entries      = array_filter(
-            $entries,
-            function ( $entry ) use ( $greater_than ) {
+			$entries,
+			function ( $entry ) use ( $greater_than ) {
 				if ( $entry[ intval( $greater_than[0] ) ] > floatval( $greater_than[1] ) ) {
 					return true;
 				}
 				return false;
 			}
-            );
+		);
 	}
 	if ( $atts['less_than'] ) {
 		$less_than = array_map( 'trim', explode( ',', $atts['less_than'] ) );
 		$entries   = array_filter(
-            $entries,
-            function ( $entry ) use ( $less_than ) {
+			$entries,
+			function ( $entry ) use ( $less_than ) {
 				if ( $entry[ intval( $less_than[0] ) ] < floatval( $less_than[1] ) ) {
 					return true;
 				}
 				return false;
 			}
-            );
+		);
 	}
 
 	$results = [];
 
-	// First, parse paired shortcodes like {{shortcode ...}}...{{/shortcode}}
-	$atts['display'] = preg_replace_callback(
-		'/\{\{(\w+)([^{}]*)\}\}(.*?)\{\{\/\1\}\}/s',
-		function ( $m ) {
-			// Construct actual shortcode string
-			$shortcode = '[' . $m[1] . $m[2] . ']' . $m[3] . '[/' . $m[1] . ']';
-			return do_shortcode( $shortcode );
-		},
-		$atts['display']
-	);
-
-	// Then parse standalone/self-closing shortcodes like {{shortcode attr='val'}}
-	$atts['display'] = preg_replace_callback(
-		'/\{\{(\w+[^\{\}\/]*)\}\}/',
-		function ( $m ) {
-			return do_shortcode( '[' . $m[1] . ']' );
-		},
-		$atts['display']
-	);
+	$atts['display'] = convert_curly_shortcodes( $atts['display'] );
 
 	$regex = '/{(gfs:)?([^{};]+)(;([^{}]+))?}/';
 	preg_match_all( $regex, $atts['display'], $matches );
@@ -395,7 +373,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		$separator = wp_kses_post( $atts['separator'] );
 	}
 
-	return wp_kses( implode( $separator, $results ), $allowed_tags );
+	return wp_kses( do_shortcode( implode( $separator, $results ) ), $allowed_tags );
 }
 
 /**
@@ -407,4 +385,44 @@ function gfsearch_shortcode( $atts, $content = null ) {
  */
 function is_multi_input_field( $field ): bool {
 	return 'name' === $field['type'] || 'address' === $field['type'] || 'checkbox' === $field['type'] || ( ( 'image_choice' === $field['type'] || 'multi_choice' === $field['type'] ) && 'checkbox' === $field['inputType'] );
+}
+
+/**
+ * Converts custom curly bracket shortcodes into standard WordPress-style shortcodes.
+ *
+ * Converts content with shortcodes in the format `{{shortcode attributes}}content{{/shortcode}}`
+ * to `[shortcode attributes]content[/shortcode]`. Handles standalone shortcodes and unmatched closing tags.
+ *
+ * @param string $content The content containing curly bracket shortcodes.
+ *
+ * @return string The converted content with standard WordPress-style shortcodes.
+ */
+function convert_curly_shortcodes( $content ) {
+	while ( preg_match( '/\{\{(\w+)\b(.*?)\}\}/s', $content, $open_match, PREG_OFFSET_CAPTURE ) ) {
+		$tag       = $open_match[1][0];
+		$attrs     = $open_match[2][0];
+		$start_pos = $open_match[0][1];
+		$end_tag   = '{{/' . $tag . '}}';
+		$end_pos   = strpos( $content, $end_tag, $start_pos );
+
+		if ( false === $end_pos ) {
+			break; // malformed shortcode
+		}
+
+		$open_len = strlen( $open_match[0][0] );
+		$inner    = substr( $content, $start_pos + $open_len, $end_pos - $start_pos - $open_len );
+
+		$replacement = '[' . $tag . $attrs . ']' . $inner . '[/' . $tag . ']';
+		$content     = substr_replace( $content, $replacement, $start_pos, $end_pos + strlen( $end_tag ) - $start_pos );
+	}
+
+	// Handle standalone shortcodes like {{shortcode attr=...}} → [shortcode attr=...]
+	$content = preg_replace_callback(
+		'/\{\{(?!\/)([^\{\}\/]+?)\s*\}\}/',
+		fn( $m ) => '[' . trim( $m[1] ) . ']',
+		$content
+	);
+
+	// Handle unmatched closing tags {{/shortcode}} → [/shortcode]
+	return preg_replace( '/\{\{\/(\w+)\}\}/', '[/$1]', $content );
 }
