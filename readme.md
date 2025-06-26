@@ -130,7 +130,9 @@ Instead <br>
     Secondary sorting is ignored if primary sort direction is `RAND`.
     Please note that dates are numeric regarding the `sort_is_num` attribute.
 
-- Use the `unique` attribute with any non-empty value to return only unique results.
+- Use the `unique` attribute with any non-empty value to return only unique results. **Please Note:** that if the results
+are not exactly the same they will be treated as unique. So the results example.co**m** and example.co**n** as a typo
+will be considered unique.
 
 - To search for empty values, leave the shortcode content blank and use the `search_empty` attribute with any non-empty value.
 
@@ -142,6 +144,11 @@ Instead <br>
 `meta` to the display key and the shortcode will return all the available meta-keys for that entry. By default, they will
 be displayed in an unordered HTML list. If you want to customize that, you can use the `separator` attribute to determine how
 the values are formatted.
+
+- If you are using the special syntax for the `display` attribute you can pass in a placeholder `{num_results}` or `{gfs:num_results}` which will be substituted
+with the number of results returned. This could be useful when using `limit="all"` and you need to know how many that is.
+
+- When using the special placeholder syntax for the `display` attribute if the first placeholder is empty the whole result will be treated as empty.
 
 - You can pass shortcodes into the `display` attribute by wrapping them in double curly braces. This works for 
 self-closing shortcodes and shortcodes with a closing tag. Attributes can be used in the shortcodes.

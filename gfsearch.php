@@ -2,7 +2,7 @@
 /**
  * Plugin Name: gfsearch
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
- * Version: 1.0.4.1
+ * Version: 1.0.5
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
@@ -279,6 +279,9 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				}
 				continue;
 			}
+			if ( 'num_results' === $display_id ) {
+				continue;
+			}
 
 			$field = GFAPI::get_field( $entry['form_id'], $display_id );
 			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
@@ -286,7 +289,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				$field_value = GFCommon::format_number( $entry[ $display_id ], $field->numberFormat, $entry['currency'], true );
 			} elseif ( $field && 'date' === $field->type ) {
 				$field_value = GFCommon::date_display( $entry[ $display_id ], 'Y-m-d', $field->dateFormat );
-			} elseif ( $field && is_multi_input_field( $field ) ) {
+			} elseif ( $field && is_multi_input_field( $field ) && ! str_contains( $display_id, '.' ) ) {
 				$multi_input_present = true;
 				$ids                 = array_column( $field['inputs'], 'id' );
 				$field_results       = [];
@@ -325,10 +328,20 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		}
 		if ( ! empty( $matches[0] ) ) {
 			$display_format = wp_kses( $atts['display'], $allowed_tags );
-			foreach ( $display_ids as $display_id ) {
+			foreach ( $display_ids as $index => $display_id ) {
+
+				if ( 'num_results' === $display_id ) {
+					continue;
+				}
+
 				// Replace all formats with the value: {id}, {gfs:id}, and {gfs:id;default-value}
 				// If the field was filtered out (because default was empty), use empty string
 				$value = $entry_results[ $display_id ] ?? '';
+
+				if ( ! $value && 0 === $index ) {
+					$display_format = '';
+					break;
+				}
 
 				// Replace simple {id} format
 				$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
@@ -354,10 +367,6 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		}
 	}
 
-	if ( $atts['unique'] ) {
-		$results = array_unique( $results );
-	}
-
 	$results = array_map( 'trim', $results );
 	$results = array_filter( $results, fn( $value ) => '' !== $value && ! is_null( $value ) );
 
@@ -373,7 +382,26 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		$separator = wp_kses_post( $atts['separator'] );
 	}
 
-	return wp_kses( do_shortcode( implode( $separator, $results ) ), $allowed_tags );
+	// Process shortcodes first, then apply uniqueness to the final output
+	$final_results = array_map(
+		function ( $result ) use ( $allowed_tags ) {
+			return wp_kses( do_shortcode( $result ), $allowed_tags );
+		},
+		$results
+	);
+
+	if ( $atts['unique'] ) {
+		$final_results = array_unique( $final_results );
+	}
+
+	$final_results = array_map(
+		function ( $result ) use ( $final_results ) {
+			return str_replace( '{gfs:num_results}', count( $final_results ), $result );
+		},
+		$final_results
+        );
+
+	return implode( $separator, $final_results );
 }
 
 /**
