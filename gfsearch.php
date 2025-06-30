@@ -57,7 +57,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	// Allow everything wp_kses_post allows plus <a> and its attributes
 	$allowed_tags      = wp_kses_allowed_html( 'post' );
-	$allowed_tags['a'] = [
+	$allowed_tags['a'] = [ // fixme
 		'href'   => true,
 		'title'  => true,
 		'target' => true,
