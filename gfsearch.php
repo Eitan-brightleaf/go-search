@@ -300,7 +300,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				}
 				$field_value = implode( ' ', $field_results );
 			} else {
-				$field_value = $entry[ $display_id ];
+				$field_value = $entry[ $display_id ] ?? '';
 			}
 
 			// Use default value if field value is empty
@@ -338,9 +338,14 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				// If the field was filtered out (because default was empty), use empty string
 				$value = $entry_results[ $display_id ] ?? '';
 
+				// If the value is empty and this is the first placeholder, use tag-specific default if available
 				if ( ! $value && 0 === $index ) {
-					$display_format = '';
-					break;
+					if ( isset( $tag_defaults[ $display_id ] ) ) {
+						$value = wp_kses_post( $tag_defaults[ $display_id ] );
+					} else {
+						$display_format = '';
+						break;
+					}
 				}
 
 				// Replace simple {id} format
@@ -447,10 +452,10 @@ function convert_curly_shortcodes( $content ) {
 	// Handle standalone shortcodes like {{shortcode attr=...}} → [shortcode attr=...]
 	$content = preg_replace_callback(
 		'/\{\{(?!\/)([^\{\}\/]+?)\s*\}\}/',
-		fn( $m ) => '[' . trim( $m[1] ) . ']',
+		fn( $m ) => '[' . $m[1] . ']',
 		$content
 	);
 
 	// Handle unmatched closing tags {{/shortcode}} → [/shortcode]
-	return preg_replace( '/\{\{\/(\w+)\}\}/', '[/$1]', $content );
+	return preg_replace( '/\{\{\/(\w+)\s*\}\}/', '[/$1]', $content );
 }
