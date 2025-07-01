@@ -15,19 +15,6 @@ add_action(
 	}
 );
 
-add_filter(
-    'gravityview/merge_tags/do_replace_variables',
-    function ( $bool, $text ) {
-		if ( $text !== '{entry_id}' ) {
-			return false;
-		} else {
-			return true;
-		}
-	},
-    10,
-    2
-    );
-
 /**
  * Processes the gfsearch shortcode to perform searching and displaying Gravity Forms entries
  * based on specified criteria and attributes.
@@ -70,7 +57,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	// Allow everything wp_kses_post allows plus <a> and its attributes
 	$allowed_tags      = wp_kses_allowed_html( 'post' );
-	$allowed_tags['a'] = [ // fixme
+	$a_tags            = [
 		'href'   => true,
 		'title'  => true,
 		'target' => true,
@@ -79,6 +66,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		'id'     => true,
 		'style'  => true,
 	];
+	$allowed_tags['a'] = $a_tags + ( $allowed_tags['a'] ?? [] );
 
 	$content = html_entity_decode( $content, ENT_QUOTES );
 
@@ -249,15 +237,32 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	$atts['display'] = convert_curly_shortcodes( $atts['display'] );
 
+	// Mask nested gfsearch shortcodes [gfsearch ...]...[/gfsearch]
+	// Mask only the display attribute value inside nested gfsearch shortcodes
+	$nested_gfsearch_map = [];
+	$masked_display      = $atts['display'];
+
+	// Mask display attribute in [gfsearch ... display="..." or display='...']...[/gfsearch]
+	$masked_display = preg_replace_callback(
+    '/(\[gfsearch[^\]]*?\sdisplay=("|\')(.*?)(\2)[^\]]*\])/i',
+    function ( $m ) use ( &$nested_gfsearch_map ) {
+        $key                         = '__NESTED_GFSEARCH_DISPLAY_' . count( $nested_gfsearch_map ) . '__';
+        $nested_gfsearch_map[ $key ] = $m[3];
+        // Replace only the display value
+        return str_replace( $m[3], $key, $m[0] );
+    },
+    $masked_display
+	);
+
 	// Updated regex: only match curly-brace {id}, {gfs:id}, {gfs:id;default} and plain gfs:id (not just numbers)
 	$regex = '/{(gfs:)?([^{};]+)(;([^{}]+))?}|\bgfs:([0-9]+)\b/';
-	preg_match_all( $regex, $atts['display'], $matches, PREG_SET_ORDER );
+	preg_match_all( $regex, $masked_display, $matches, PREG_SET_ORDER );
 
 	$display_ids  = [];
 	$tag_defaults = [];
 
 	if ( empty( $matches ) ) {
-		$display_ids = array_map( 'sanitize_text_field', explode( ',', $atts['display'] ) );
+		$display_ids = array_map( 'sanitize_text_field', explode( ',', $masked_display ) );
 		$display_ids = array_map( 'trim', $display_ids );
 	} else {
 		foreach ( $matches as $match ) {
@@ -313,7 +318,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 						$field_results[] = $entry[ $id ];
 					}
 				}
-				$field_value = implode( ' ', $field_results );
+					$field_value = implode( ' ', $field_results );
 			} else {
 				$field_value = $entry[ $display_id ] ?? '';
 			}
@@ -342,7 +347,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			$entry_results = array_filter( $entry_results, fn( $value ) => '' !== $value && ! is_null( $value ) );
 		}
 		if ( ! empty( $matches ) ) {
-			$display_format = wp_kses( $atts['display'], $allowed_tags );
+			$display_format = wp_kses( $masked_display, $allowed_tags );
 			foreach ( $display_ids as $index => $display_id ) {
 				if ( 'num_results' === $display_id ) {
 					continue;
@@ -371,6 +376,10 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				// Replace plain gfs:id and id as whole words only (to avoid partial replacements)
 				$display_format = preg_replace( '/\bgfs:' . preg_quote( $display_id, '/' ) . '\b/', $value, $display_format );
 				$display_format = preg_replace( '/\b' . preg_quote( $display_id, '/' ) . '\b/', $value, $display_format );
+			}
+			// Restore masked display attributes in nested gfsearch
+			if ( ! empty( $nested_gfsearch_map ) ) {
+				$display_format = strtr( $display_format, $nested_gfsearch_map );
 			}
 			$result_text = $display_format;
 			if ( $atts['link'] ) {
