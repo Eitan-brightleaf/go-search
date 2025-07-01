@@ -15,6 +15,19 @@ add_action(
 	}
 );
 
+add_filter(
+    'gravityview/merge_tags/do_replace_variables',
+    function ( $bool, $text ) {
+		if ( $text !== '{entry_id}' ) {
+			return false;
+		} else {
+			return true;
+		}
+	},
+    10,
+    2
+    );
+
 /**
  * Processes the gfsearch shortcode to perform searching and displaying Gravity Forms entries
  * based on specified criteria and attributes.
@@ -236,28 +249,30 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	$atts['display'] = convert_curly_shortcodes( $atts['display'] );
 
-	$regex = '/{(gfs:)?([^{};]+)(;([^{}]+))?}/';
-	preg_match_all( $regex, $atts['display'], $matches );
+	// Updated regex: only match curly-brace {id}, {gfs:id}, {gfs:id;default} and plain gfs:id (not just numbers)
+	$regex = '/{(gfs:)?([^{};]+)(;([^{}]+))?}|\bgfs:([0-9]+)\b/';
+	preg_match_all( $regex, $atts['display'], $matches, PREG_SET_ORDER );
 
-	if ( empty( $matches[0] ) ) {
-		$display_ids  = array_map( 'sanitize_text_field', explode( ',', $atts['display'] ) );
-		$display_ids  = array_map( 'trim', $display_ids );
-		$tag_defaults = [];
+	$display_ids  = [];
+	$tag_defaults = [];
+
+	if ( empty( $matches ) ) {
+		$display_ids = array_map( 'sanitize_text_field', explode( ',', $atts['display'] ) );
+		$display_ids = array_map( 'trim', $display_ids );
 	} else {
-		// Extract the actual IDs and default values, removing the prefix if present
-		$display_ids  = [];
-		$tag_defaults = [];
-
-		foreach ( $matches[0] as $index => $match ) {
-			// Get the field ID
-			$field_id = $matches[2][ $index ];
-
-			// Store the default value if present
-			if ( ! empty( $matches[4][ $index ] ) ) {
-				$tag_defaults[ $field_id ] = $matches[4][ $index ];
+		foreach ( $matches as $match ) {
+			// If curly-brace format, use those capture groups
+			if ( isset( $match[2] ) && '' !== $match[2] ) {
+				$field_id = $match[2];
+				if ( ! empty( $match[4] ) ) {
+					$tag_defaults[ $field_id ] = $match[4];
+				}
+				$display_ids[] = sanitize_text_field( $field_id );
+				// If plain gfs:id format
+			} elseif ( isset( $match[5] ) && '' !== $match[5] ) {
+				$field_id      = $match[5];
+				$display_ids[] = sanitize_text_field( $field_id );
 			}
-
-			$display_ids[] = sanitize_text_field( $field_id );
 		}
 	}
 
@@ -326,16 +341,13 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		if ( '' === $atts['default'] || is_null( $atts['default'] ) ) {
 			$entry_results = array_filter( $entry_results, fn( $value ) => '' !== $value && ! is_null( $value ) );
 		}
-		if ( ! empty( $matches[0] ) ) {
+		if ( ! empty( $matches ) ) {
 			$display_format = wp_kses( $atts['display'], $allowed_tags );
 			foreach ( $display_ids as $index => $display_id ) {
-
 				if ( 'num_results' === $display_id ) {
 					continue;
 				}
 
-				// Replace all formats with the value: {id}, {gfs:id}, and {gfs:id;default-value}
-				// If the field was filtered out (because default was empty), use empty string
 				$value = $entry_results[ $display_id ] ?? '';
 
 				// If the value is empty and this is the first placeholder, use tag-specific default if available
@@ -348,15 +360,17 @@ function gfsearch_shortcode( $atts, $content = null ) {
 					}
 				}
 
-				// Replace simple {id} format
-				$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
-
-				// Replace {gfs:id} format
+				// Replace curly-brace formats first
 				$display_format = str_replace( '{gfs:' . $display_id . '}', $value, $display_format );
-
+				$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
 				// Replace {gfs:id;default-value} format
-				$pattern        = '/{(gfs:)?' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+				$pattern        = '/{gfs:' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
 				$display_format = preg_replace( $pattern, $value, $display_format );
+				$pattern        = '/{' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+				$display_format = preg_replace( $pattern, $value, $display_format );
+				// Replace plain gfs:id and id as whole words only (to avoid partial replacements)
+				$display_format = preg_replace( '/\bgfs:' . preg_quote( $display_id, '/' ) . '\b/', $value, $display_format );
+				$display_format = preg_replace( '/\b' . preg_quote( $display_id, '/' ) . '\b/', $value, $display_format );
 			}
 			$result_text = $display_format;
 			if ( $atts['link'] ) {
@@ -389,10 +403,10 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	// Process shortcodes first, then apply uniqueness to the final output
 	$final_results = array_map(
-		function ( $result ) use ( $allowed_tags ) {
-			return wp_kses( do_shortcode( $result ), $allowed_tags );
-		},
-		$results
+	function ( $result ) use ( $allowed_tags ) {
+		return wp_kses( do_shortcode( $result ), $allowed_tags );
+	},
+	$results
 	);
 
 	if ( $atts['unique'] ) {
@@ -400,10 +414,10 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	}
 
 	$final_results = array_map(
-		function ( $result ) use ( $final_results ) {
-			return str_replace( '{gfs:num_results}', count( $final_results ), $result );
-		},
-		$final_results
+	function ( $result ) use ( $final_results ) {
+		return str_replace( '{gfs:num_results}', count( $final_results ), $result );
+	},
+	$final_results
         );
 
 	return implode( $separator, $final_results );
