@@ -31,7 +31,7 @@ This displays the value of field ID 13 from the latest entry in form 1.
 |--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
 | **`target`**                   | Specify forms to search: `0` for all forms, or comma-separated list of form IDs (e.g., `target="1,2"`).                                                                                                                  | (all forms) `0` |
 | **`search`**                   | Field IDs/entry properties for filtering entries. Separate multiple IDs by a comma (`search="13,14"`). The corresponding values to search for should be placed in the shortcode content, separated by the pipe operator. | _(None)_        |
-| **`display`**                  | Comma seperated list of field IDs/entry properties to display. Also allows formating results with placeholders.                                                                                                          | _(Required)_    |
+| **`display`**                  | Comma separated list of field IDs/entry properties to display. Also allows formating results with placeholders.                                                                                                          | _(Required)_    |
 | **`search_mode`**              | Match all conditions (`all`, default) or any condition (`any`).                                                                                                                                                          | `all`           |
 | **`greater_than`**             | Filter numeric values greater than a threshold, e.g., `greater_than="4, 1000"` where 4 is the field ID and 1000 is the threshold.                                                                                        | _(None)_        |
 | **`less_than`**                | Filter numeric values less than a threshold, e.g., `less_than="6, 50"` where 6 is the field ID and 50 is the threshold.                                                                                                  | _(None)_        |
@@ -44,13 +44,13 @@ This displays the value of field ID 13 from the latest entry in form 1.
 | **`limit`**                    | Number of results to display. Use `limit="all"` to display all entries.                                                                                                                                                  | `1`             |
 | **`separator`**                | Separator between **entry** results (supports HTML).                                                                                                                                                                     | _(Varies)_      |
 | **`search_empty`**             | Search for fields with empty/blank values.                                                                                                                                                                               | `false`         |
-| **`default`**                  | Default text to display if no results match search criteria. Can input multiple values corresponding to each `display` value, seperated by a double pipe symbol.                                                         | _(Blank)_       |
+| **`default`**                  | Default text to display if no results match search criteria. Can input multiple values corresponding to each `display` value, separated by a double pipe symbol.                                                         | _(Blank)_       |
 | **`link`**                     | Makes results clickable links to admin entry details.                                                                                                                                                                    | `false`         |
 
 
 ### 🧩 Examples
 
-#### Example 1: Display fields 16 and 17 (comma seperated) when field 13 matches John and 14 matches john@example.com
+#### Example 1: Display fields 16 and 17 (comma separated) when field 13 matches John and 14 matches john@example.com
 This will display the results from the five latest matching entries from form 1. The entry results will be each on a new line.
 The shortcode will return 'No results found' for any blank entries or blank results in matching entries.
 ```markdown
@@ -106,93 +106,180 @@ You can create links to anywhere you want, including other views or parts of thi
   [gfsearch target="2" display="13" sort_key="date_created" secondary_sort_key="name" secondary_sort_direction="ASC"]
 ```
 
-## Display Attribute
+## 🖼️ Display Attribute
 
-- For basic usage of the display attribute pass in a comma seperated list of entry meta to display.
+The `display` attribute controls what is shown for each matching entry. You can use it in two different formats:
 
-- When displaying one entry field from multiple entries by default, the results will be separated by commas. If you are
-displaying multiple entry fields from each entry, the entries will be separated by semicolons while the entry fields will
-be separated by commas. The separator between entry results can be modified with the `separator` attribute.
+---
 
-- The format that the individual entry fields will be displayed in is highly customizable. It supports entering just about
-any string, including HTML, with using placeholders for the entry meta you want filled in. Just take care not to enter
-anything that will break the shortcode such as brackets `[]` or close the display attribute early by mixing single and
-double quotes.
+### 🔹 1. Basic Comma-Separated Field List
 
-- The `display` attribute supports placeholders in the following formats:
-  - `{id}` (curly braces, field/property ID)
-  - `{gfs:id}` (curly braces, with `gfs:` prefix)
-  - `gfs:id` (plain, with `gfs:` prefix, no curly braces)
+You can pass a simple comma-separated list of field or property IDs, like:
 
-- You can set a default value per merge tag basis by prefixing the merge tag with gfs and closing with semicolon and the default value. 
-This is aside from the `default` attribute.
-  For example `{gfs:Name 5;No Name Found}` or `{gfs:created_by;Current User}` or `{gfs:phone;Not Available}`
+```markdown
+display="13,14,15"
+```
 
-- **Default values for placeholders** are only supported in curly-brace formats:
-  - `{id;default}`
-  - `{gfs:id;default}`
-  - Example: `display="Name: {gfs:5;No Name Found}"`
-  - The plain format `gfs:id;default` is not supported.
+* This will output the values of fields 13, 14, and 15 for each matching entry.
+* By default:
 
-- You generally should use the plain `{id}` format for the placeholders but there are situations where you need the 
-other formats such as when using the `gfsearch` shortcode in a place that merge tags may be parsed such as a Gravity View custom content widget.
-  - For numeric meta-properties (such as a field id) use the plain `{id}` format.
-  - For non-numeric meta-properties (such as entry ID or date created or Gravity Flow workflow meta) you should use the `{gfs:id}` format.
-  - The `gfs:id` format is primarily used when in a nested shortcode. See below for more information.
+  * **Single field per entry** → results are separated by commas
+  * **Multiple fields per entry** → fields are separated by commas; entries are separated by semicolons
+* You can override the entry separator with the `separator` attribute (supports HTML):
 
-- Always ensure placeholders (e.g., `{13}`) match the field IDs or entry properties.
+```markdown
+separator="<br>"   // entries appear on new lines
+```
 
-- Avoid using double quotes (`"`) inside the `display` attribute if your attribute is wrapped with double quotes—use single quotes (`'`) instead, and vice versa.
-  <br> Avoid <br>
-  `display="<a href="example.com">{3}</a>"`<br>
-  Instead <br>
-  `display="<a href='example.com'>{3}</a>"`
+---
 
-- If you are using the special syntax for the `display` attribute you can pass in a placeholder `{num_results}` or `{gfs:num_results}` which will be substituted
-  with the number of results returned. This could be useful when using `limit="all"` and you need to know how results there are.
+### 🔹 2. Custom Display String with Placeholders
 
-- When using the special placeholder syntax for the `display` attribute if the first placeholder is empty the whole result will be treated as empty.
+You can build a custom display using placeholders inside a string. This gives you full control over formatting, including HTML, text, and shortcodes.
 
-- To see which fields are available for search or display, use:
-`[gfsearch display="meta"]`.
-  This will output a list of all meta keys for the matched entry. You can customize the formatting using the `separator` attribute.
-**Tip**: You can also find meta-keys by checking the column headers in the Gravity Forms → Entries screen. Hover or click a column title to see the key in the URL.
+```markdown
+display="Name: {13}, Email: {14}"
+```
+
+---
+
+### 🏷️ Placeholder Formats
+
+You can use placeholders to insert entry values into the output:
+
+* `{id}` – standard numeric field or entry property (e.g., `{13}`, `{id}`, `{form_id}`)
+* `{gfs:id}` – for non-numeric properties when used in **contexts where merge tags may be parsed**, such as Gravity View custom content widgets, confirmations, or notifications
+* `gfs:id` – used only in **nested shortcodes**
+
+> **Tip**: Use `{id}` for most numeric fields, and `{gfs:id}` for text-based meta like `created_by`, `date_created`, etc.
+
+---
+
+### 🆘️ Default Values for Placeholders
+
+You can include a fallback/default value inside a placeholder using `;`:
+
+```markdown
+{5;No Name Found}
+{gfs:created_by;Current User}
+```
+
+* Only curly-brace formats (`{}`) support default values.
+* Plain format (`gfs:id;default`) is **not supported**.
+
+---
+
+### ⚠️ Placeholder Behavior Notes
+
+* If the **first placeholder in your display string** resolves to an empty value, the entire result will be treated as empty and skipped (unless a default value is configured).
+* Always match placeholders to real field or entry property IDs in your form.
+* Avoid nesting `"` inside the `display` string if you're already using double quotes to wrap it — prefer single quotes inside instead.
+
+```markdown
+display="<a href='mailto:{13}'>{13}</a>"  ✅
+display="<a href="{13}">"                 ❌
+```
+
+---
+
+### 🔢 Special Placeholders
+
+- {num_results} or {gfs:num_results} will be replaced with the total number of results returned.
+Useful when using limit="all" or for showing counts like: "{num_results} entries found."
+
+- To see which keys are available for use in the display or search attributes:
+
+  `[gfsearch display="meta"]`
+
+  This will return a list of all meta keys for the matched entry. You can customize the layout with the `separator` attribute.
+
+  > **Tip**: You can also find meta-keys by hovering or clicking on column headers in Forms → Entries in the WP admin. The meta key appears in the URL.
 
 
-### Nested Shortcodes
 
-- You can use shortcodes in the `display` attribute and the value of the shortcode will become part of the display string.
+### 🧬 Nested Shortcodes
 
-- To use shortcodes in the `display` attribute by wrap them in double curly braces. For example:
-  `[gfsearch display="This is an example: Entry ID: {gfs:id} Sum: {{gravitymath}}2+2{{/gravitymath}} Nested search:{{gfsearch display='23'}}"]`
+You can include shortcodes inside the `display` attribute using **double curly braces** (`{{ ... }}` syntax). This allows you to embed other shortcodes—like `gravitymath`, `gfsearch` or any other shortcode—within the output for each entry.
 
-- This works for self-closing shortcodes and shortcodes with a closing tag. Attributes can be used in the shortcodes.
+---
 
-- The shortcodes will be parsed after placeholders are replaced, so you can use placeholders in the shortcode. 
+#### 🔧 Basic Syntax
 
-- Remember that the shortcode result should be used in conjunction with placeholders as part of a display string, or else
-it should return a field ID/entry property that can be returned. For example, the following
-`[gfsearch target=12 search=2 display="{{gravitymath}}2+2{{/gravitymath}}]John Doe[/gfsearch]`
-will not display 4 but will instead display the value of field ID 4.
+Wrap any supported shortcode inside double curly braces:
 
-- When using nested `{{gfsearch ... display="..."}}` shortcodes inside the display attribute, only the outer display's 
-placeholders are parsed in the parent shortcode. The display attribute of nested gfsearch shortcodes is 
-ignored by the parent and will be parsed when the nested shortcode is processed.
+```markdown
+[gfsearch display="Sum: {{gravitymath}}2+2{{/gravitymath}}"]
+```
 
-- When using placeholders in a nested shortcode, you should use the gfs:id format without the curly braces. This is both
-when using them in the shortcode content and attributes. Likewise, you may need to use a different merge tag format
-for other parts of the shortcode. Notice the content of the first example below and see our [snippet]() which converts it back
-to a regular merge tag for Gravity Math.
-For example `{{gravitymath scope='view' id='1014' filter='filter_19=gfs:21' }}~gfs.8.sum~{{/gravitymath }}`
-`{{gfsearch target='60' search='1' sort_key='3' display='{16} on {3}' }}gfs:21{{/gfsearch}}`
+* Works with both self-closing and wrapped shortcodes
+* Supports all shortcode attributes
+* Placeholders like `{13}` will be parsed **before** the nested shortcode is run
 
-- Take extra care not to mix and match single and double quotes inside the display attribute if you are using nested
-shortcodes and attributes inside those. This is doubly true if using our [Global Variables]() plugin to insert shortcodes.
-**Note:** Even when using Global Variables use the double curly brace syntax in the formula.
+---
+
+#### 🔁 Placeholder Behavior
+
+When nesting a `gfsearch` shortcode:
+
+* The **outer** `gfsearch` processes its own placeholders in the `display` string first
+* The **nested** `gfsearch` processes its own `display` attribute separately after it runs
+* Use the format `gfs:id` (no curly braces) inside nested shortcodes to refer to placeholder values
+* Likewise, when referencing entry values inside formulas or shortcode attributes, you may need to use a custom merge tag
+format. Using standard merge tags like `{8}` or `{gfs:8}` **will break** the shortcode. For example:
+
+```markdown
+{{gravitymath scope='view' id='1014' filter='filter_19=gfs:21'}}~gfs.8.sum~{{/gravitymath}}
+```
+
+This correctly filters by field 21 and calculates the sum of field 8 using special merge tag syntax. See our [snippet]() for more information.
+
+```markdown
+[gfsearch display="Lookup: {{gfsearch target='60' search='1' display='gfs:23'}}"]
+John
+[/gfsearch]
+```
+
+---
+
+#### ⚠️ Best Practices & Caveats
+
+* Don’t mix single and double quotes inside the `display` attribute—if the outer string uses double quotes, use single quotes inside:
+
+```markdown
+display="{{gravitymath scope='view' id='1014'}}2+2{{/gravitymath}}"
+```
+
+* Even when using the [Global Variables plugin](https://digital.brightleaf.info/global-variables-for-gravity-math/), use the double curly brace syntax for your formulas if they are meant to run inside a GFSearch display attribute.
+
+* Shortcodes inside the `display` string must either:
+
+  * Return a **value** that can be shown as part of a string alongside other placeholders or text
+  * Or return a **field/property ID** when using the basic display format (e.g., `display="gfs:23"`), which GFSearch will interpret and replace with the actual entry value
+
+#### 💡 Examples
+
+##### Nested shortcode with computed math:
+
+```markdown
+[gfsearch display="Total: {{gravitymath}}~gfs.8+gfs.9~{{/gravitymath}}"]
+```
+
+##### Nested gfsearch to pull related field:
+
+```markdown
+[gfsearch target='60' search='1' sort_key='3' display="Submitted by {16} on {3}. Related: {{gfsearch target='61' search='2' display='gfs:23'}}"]
+John
+[/gfsearch]
+```
+
+This could output something like:
+
+> Submitted by John Smith on 2024-07-15. Related: Completed
+
 
 ## ❗ Notes and Best Practices
 
-- To search multiple fields pass comma seperated IDs to the search attribute and separate the corresponding values in 
+- To search multiple fields pass comma separated IDs to the search attribute and separate the corresponding values in 
 the shortcode content with the `|` symbol. Use the `search_mode` attribute to configure if any or all conditions must 
 match. To search for multiple values for the same field, repeat the field ID in the search attribute with the corresponding values in the shortcode content.
   
