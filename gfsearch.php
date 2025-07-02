@@ -370,13 +370,12 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				$display_format = str_replace( '{gfs:' . $display_id . '}', $value, $display_format );
 				$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
 				// Replace {gfs:id;default-value} format
-				$pattern        = '/{gfs:' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+				$pattern = '/{gfs:' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
 				$display_format = preg_replace( $pattern, $value, $display_format );
-				$pattern        = '/{' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+				$pattern = '/{' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
 				$display_format = preg_replace( $pattern, $value, $display_format );
-				// Replace plain gfs:id and id as whole words only (to avoid partial replacements)
-				$display_format = preg_replace( '/\bgfs:' . preg_quote( $display_id, '/' ) . '\b/', $value, $display_format );
-				$display_format = preg_replace( '/\b' . preg_quote( $display_id, '/' ) . '\b/', $value, $display_format );
+				// Replace plain gfs:id only when not part of a larger word or attribute (not preceded/followed by [\w\.:])
+				$display_format = preg_replace('/(?<![\w\.:])gfs:' . preg_quote($display_id, '/') . '(?![\w\.:])/', $value, $display_format);
 			}
 			// Restore masked display attributes in nested gfsearch
 			if ( ! empty( $nested_gfsearch_map ) ) {
