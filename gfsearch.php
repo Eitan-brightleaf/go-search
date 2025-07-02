@@ -280,6 +280,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			}
 		}
 	}
+	$display_ids = array_unique( $display_ids );
 
 	$multi_input_present = false;
 
