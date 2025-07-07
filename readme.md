@@ -42,7 +42,7 @@ This displays the value of field ID 13 from the latest entry in form 1.
 | **`secondary_sort_direction`** | Sorting direction for the secondary sort (ASC, DESC).                                                                                                                                                                    | `DESC`          |
 | **`unique`**                   | Display only unique values in the results.                                                                                                                                                                               | `false`         |
 | **`limit`**                    | Number of results to display. Use `limit="all"` to display all entries.                                                                                                                                                  | `1`             |
-| **`separator`**                | Separator between **entry** results (supports HTML).                                                                                                                                                                     | _(Varies)_      |
+| **`separator`**                | Separator between **entry** results (supports HTML). Will only be used when there is more than one entry returned by the search. To configure a blank separator, enter `__none__`.                                         | _(Varies)_      |
 | **`search_empty`**             | Search for fields with empty/blank values.                                                                                                                                                                               | `false`         |
 | **`default`**                  | Default text to display if no results match search criteria. Can input multiple values corresponding to each `display` value, separated by a double pipe symbol.                                                         | _(Blank)_       |
 | **`link`**                     | Makes results clickable links to admin entry details.                                                                                                                                                                    | `false`         |
@@ -76,12 +76,12 @@ This will return a list of unique created_by values from form 3. Each will link 
 #### Example 4: Global Search with Custom HTML
 This searches across all forms and fields and creates an HTML list showing the entry ID and the value of field 13.
 ```markdown
-[gfsearch target="0" display="<li>ID: {id}, Value: {13}" separator="</li>"]
+[gfsearch target="0" display="<li>ID: {id}, Value: {13}</li>" separator="__none__"]
 ```
 Wrap the above shortcode within `<ul>` tags:
 ```html
 <ul>
-  [gfsearch target="0" display="<li>ID: {id}, Value: {13}" separator="</li>"]
+    [gfsearch target="0" display="<li>ID: {id}, Value: {13}</li>" separator="__none__"]
 </ul>
 ```
 
@@ -92,7 +92,7 @@ Wrap the above shortcode within `<ul>` tags:
       <tr><th>Name</th><th>Email</th><th>Link</th></tr>
     </thead>
     <tbody>
-    [gfsearch target="1" search="3,5" display="<tr><td>{1}</td><td><a href='mailto:{2}'>{2}</a></td><td><a href='{6}&query={10}'>{6}&query={10}</a></td>" separator="</tr>"]
+    [gfsearch target="1" search="3,5" display="<tr><td>{1}</td><td><a href='mailto:{2}'>{2}</a></td><td><a href='{6}&query={10}'>{6}&query={10}</a></td></tr>" separator="__none__"]
     John Doe | john@example.com
     [/gfsearch]
     </tbody>
@@ -126,10 +126,9 @@ display="13,14,15"
   * **Single field per entry** → results are separated by commas
   * **Multiple fields per entry** → fields are separated by commas; entries are separated by semicolons
 * You can override the entry separator with the `separator` attribute (supports HTML):
-
-```markdown
-separator="<br>"   // entries appear on new lines
-```
+> **Note**: The behavior of the separator applies to both the basic comma-separated field list and the custom 
+formatting with placeholders options. The separator is only applied when there is more than one entry returned by the 
+search. To configure a blank separator, enter `__none__`.
 
 ---
 

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: gfsearch
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
- * Version: 1.0.6
+ * Version: 1.1.0
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
@@ -370,12 +370,12 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				$display_format = str_replace( '{gfs:' . $display_id . '}', $value, $display_format );
 				$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
 				// Replace {gfs:id;default-value} format
-				$pattern = '/{gfs:' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+				$pattern        = '/{gfs:' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
 				$display_format = preg_replace( $pattern, $value, $display_format );
-				$pattern = '/{' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+				$pattern        = '/{' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
 				$display_format = preg_replace( $pattern, $value, $display_format );
 				// Replace plain gfs:id only when not part of a larger word or attribute (not preceded/followed by [\w\.:])
-				$display_format = preg_replace('/(?<![\w\.:])gfs:' . preg_quote($display_id, '/') . '(?![\w\.:])/', $value, $display_format);
+				$display_format = preg_replace( '/(?<![\w\.:])gfs:' . preg_quote( $display_id, '/' ) . '(?![\w\.:])/', $value, $display_format );
 			}
 			// Restore masked display attributes in nested gfsearch
 			if ( ! empty( $nested_gfsearch_map ) ) {
@@ -406,6 +406,8 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	if ( empty( $atts['separator'] ) ) {
 		$separator = ( count( $display_ids ) > 1 || $multi_input_present ) ? '; ' : ', ';
+	} elseif ( strtolower( '__none__' ) === $atts['separator'] ) {
+		$separator = '';
 	} else {
 		$separator = wp_kses_post( $atts['separator'] );
 	}
