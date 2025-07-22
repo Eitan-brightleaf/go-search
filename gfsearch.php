@@ -2,7 +2,7 @@
 /**
  * Plugin Name: gfsearch
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
@@ -98,6 +98,30 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			'key'   => $search_id,
 			'value' => GFCommon::replace_variables( $content_values[ $index ], [], [] ),
 		];
+	}
+
+	// Process greater_than attribute
+	if ( $atts['greater_than'] ) {
+		$greater_than = array_map( 'trim', explode( ',', $atts['greater_than'] ) );
+		if ( count( $greater_than ) >= 2 ) {
+			$search_criteria['field_filters'][] = [
+				'key'      => intval( $greater_than[0] ),
+				'value'    => floatval( $greater_than[1] ),
+				'operator' => '>',
+			];
+		}
+	}
+
+	// Process less_than attribute
+	if ( $atts['less_than'] ) {
+		$less_than = array_map( 'trim', explode( ',', $atts['less_than'] ) );
+		if ( count( $less_than ) >= 2 ) {
+			$search_criteria['field_filters'][] = [
+				'key'      => intval( $less_than[0] ),
+				'value'    => floatval( $less_than[1] ),
+				'operator' => '<',
+			];
+		}
 	}
 
 	$sorting = [
@@ -206,31 +230,6 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	if ( isset( $original_limit ) && $original_limit < count( $entries ) ) {
 		$entries = array_slice( $entries, 0, $original_limit );
-	}
-
-	if ( $atts['greater_than'] ) {
-		$greater_than = array_map( 'trim', explode( ',', $atts['greater_than'] ) );
-		$entries      = array_filter(
-			$entries,
-			function ( $entry ) use ( $greater_than ) {
-				if ( $entry[ intval( $greater_than[0] ) ] > floatval( $greater_than[1] ) ) {
-					return true;
-				}
-				return false;
-			}
-		);
-	}
-	if ( $atts['less_than'] ) {
-		$less_than = array_map( 'trim', explode( ',', $atts['less_than'] ) );
-		$entries   = array_filter(
-			$entries,
-			function ( $entry ) use ( $less_than ) {
-				if ( $entry[ intval( $less_than[0] ) ] < floatval( $less_than[1] ) ) {
-					return true;
-				}
-				return false;
-			}
-		);
 	}
 
 	$results = [];
