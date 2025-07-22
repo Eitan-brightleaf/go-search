@@ -382,7 +382,7 @@ This shortcode can be installed as a snippet or as a plugin.
 [Download the zip](https://github.com/Eitan-brightleaf/gfsearch/archive/refs/heads/main.zip) and install in the WP admin dashboard.
 
 ### As a snippet
-Copy the code [here](https://raw.githubusercontent.com/Eitan-brightleaf/gfsearch/refs/heads/main/gfsearch.php?token=GHSAT0AAAAAADCYGWKL3KTFURKPP3WA2CCG2BMJXXQ)
+Copy the code from [here](https://digital.brightleaf.info/code/entry/44-gfsearch-shortcode/)
 and install in your themes functions.php file or with your favorite code snippets plugin.
 
 ## 📜 License
