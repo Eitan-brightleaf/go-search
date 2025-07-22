@@ -42,7 +42,7 @@ This displays the value of field ID 13 from the latest entry in form 1.
 | **`secondary_sort_direction`** | Sorting direction for the secondary sort (ASC, DESC).                                                                                                                                                                    | `DESC`          |
 | **`unique`**                   | Display only unique values in the results.                                                                                                                                                                               | `false`         |
 | **`limit`**                    | Number of results to display. Use `limit="all"` to display all entries.                                                                                                                                                  | `1`             |
-| **`separator`**                | Separator between **entry** results (supports HTML). Will only be used when there is more than one entry returned by the search. To configure a blank separator, enter `__none__`.                                         | _(Varies)_      |
+| **`separator`**                | Separator between **entry** results (supports HTML). Will only be used when there is more than one entry returned by the search. To configure a blank separator, enter `__none__`.                                       | _(Varies)_      |
 | **`search_empty`**             | Search for fields with empty/blank values.                                                                                                                                                                               | `false`         |
 | **`default`**                  | Default text to display if no results match search criteria. Can input multiple values corresponding to each `display` value, separated by a double pipe symbol.                                                         | _(Blank)_       |
 | **`link`**                     | Makes results clickable links to admin entry details.                                                                                                                                                                    | `false`         |
@@ -100,7 +100,7 @@ Wrap the above shortcode within `<ul>` tags:
 ```
 You can create links to anywhere you want, including other views or parts of this view!
 
-#### Example 6: Secondary Search
+#### Example 6: Secondary Sort
 
 ```markdown
   [gfsearch target="2" display="13" sort_key="date_created" secondary_sort_key="name" secondary_sort_direction="ASC"]
