@@ -35,6 +35,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		[
 			'target'                   => '0',
 			'search'                   => '',
+			'operators'                => '',
 			'greater_than'             => false,
 			'less_than'                => false,
 			'display'                  => '',
@@ -84,6 +85,13 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	$search_ids = array_map( 'sanitize_text_field', explode( ',', $atts['search'] ) );
 	$search_ids = array_map( 'trim', $search_ids );
 
+	// Parse operators if provided
+	$operators = [];
+	if ( ! empty( $atts['operators'] ) ) {
+		$operators = array_map( 'trim', explode( ',', $atts['operators'] ) );
+		$operators = array_map( 'sanitize_text_field', $operators );
+	}
+
 	$content_values = array_map( 'trim', explode( '|', $content ) );
 
 	foreach ( $search_ids as $index => $search_id ) {
@@ -94,10 +102,61 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		if ( $current_field && 'number' === $current_field['type'] ) {
 			$content_values[ $index ] = str_replace( ',', '', $content_values[ $index ] );
 		}
-		$search_criteria['field_filters'][] = [
-			'key'   => $search_id,
-			'value' => GFCommon::replace_variables( $content_values[ $index ], [], [] ),
-		];
+
+        if ( str_contains( $content_values[ $index ], 'array(' ) ) {
+            $json_string              = str_replace( [ 'array(', ')', "'" ], [ '[', ']', '"' ], $content_values[ $index ] );
+            $content_values[ $index ] = json_decode( $json_string, true );
+            $content_values[ $index ] = array_map(
+                fn( $value ) => GFCommon::replace_variables( $value, [], [] ),
+                $content_values[ $index ]
+            );
+
+            $field_filter = [
+                'key'   => $search_id,
+                'value' => $content_values[ $index ],
+            ];
+        } else {
+            $field_filter = [
+                'key'   => $search_id,
+                'value' => GFCommon::replace_variables( $content_values[ $index ], [], [] ),
+            ];
+        }
+		// Add operator if provided for this field
+		if ( ! empty( $operators[ $index ] ) ) {
+            /*
+             * Validate operator against supported operators
+             * is, = (exact match)
+             * isnot, isnot, != (not equal) (<> not supported due to sanitizing issues)
+             * contains (Substring search-converted to LIKE %value%)
+             * like: SQL like with wildcards
+             * notin, not in (values not in array)
+             * in (values in array)
+             * lt, gt, lt=, gt=, (numeric operators)
+             */
+			$supported_operators = [
+				'=',
+				'is',
+				'is not',
+				'isnot',
+                '!=',
+                'contains',
+				'like',
+				'not in',
+				'notin',
+				'in',
+                'lt',
+				'gt',
+				'gt=',
+				'lt=',
+			];
+			if ( in_array( $operators[ $index ], $supported_operators, true ) ) {
+                $operators[ $index ]      = str_replace( 'gt', '>', $operators[ $index ] );
+                $operators[ $index ]      = str_replace( 'lt', '<', $operators[ $index ] );
+				$field_filter['operator'] = $operators[ $index ];
+			}
+		}
+
+		$search_criteria['field_filters'][] = $field_filter;
 	}
 
 	// Process greater_than attribute
