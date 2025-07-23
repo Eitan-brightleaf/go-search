@@ -82,12 +82,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		return '';
 	}
 
-	$search_ids = array_map(
-			function ( $search_id ) {
-				return GFCommon::replace_variables( sanitize_text_field( $search_id ), [], [] );
-			},
-        explode( ',', $atts['search'] )
-        );
+	$search_ids = array_map( fn( $search_id ) => GFCommon::replace_variables( sanitize_text_field( $search_id ), [], [] ), explode( ',', $atts['search'] ) );
 	$search_ids = array_map( 'trim', $search_ids );
 
 	// Parse operators if provided
