@@ -385,7 +385,13 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				}
 					$field_value = implode( ' ', $field_results );
 			} else {
-				$field_value = $entry[ $display_id ] ?? '';
+                $field_value = $entry[ $display_id ] ?? '';
+                if ( '' === $field_value ) {
+                    $temp = GFCommon::replace_variables( '{' . $display_id . '}', GFAPI::get_form( $entry['form_id'] ), $entry );
+                    if ( '{' . $display_id . '}' !== $temp ) {
+                        $field_value = $temp;
+                    }
+                }
 			}
 
 			// Use default value if field value is empty
