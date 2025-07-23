@@ -2,10 +2,11 @@
 /**
  * Plugin Name: gfsearch
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
- * Version: 1.2.2
+ * Version: 1.3.0
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
+ *
  */
 
 add_action(
@@ -18,6 +19,24 @@ add_action(
 /**
  * Processes the gfsearch shortcode to perform searching and displaying Gravity Forms entries
  * based on specified criteria and attributes.
+ *
+ * The shortcode supports the following attributes:
+ * - target: Specify forms to search (0 for all forms, or comma-separated list of form IDs)
+ * - search: Field IDs/entry properties for filtering entries
+ * - operators: Operators that correspond to each field in the search attribute
+ * - ds: Display string with placeholders (gfs.1, gfs.2, etc.)
+ * - dp: Display placeholders (field IDs to display)
+ * - sort_key: Field/property to sort entries
+ * - sort_direction: Sorting direction (ASC, DESC, or RAND)
+ * - sort_is_num: Indicates if sorting is numeric (true/false)
+ * - secondary_sort_key: Secondary sorting field
+ * - secondary_sort_direction: Sorting direction for the secondary sort
+ * - unique: Display only unique values in the results
+ * - limit: Number of results to display
+ * - search_mode: Match all conditions (all) or any condition (any)
+ * - search_empty: Search for fields with empty/blank values
+ * - default: Default text to display if no results match search criteria
+ * - link: Makes results clickable links to admin entry details
  *
  * @param array  $atts An associative array of attributes, or default values.
  * @param string $content Content of the shortcode, typically search values separated by '|'.
@@ -36,9 +55,8 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			'target'                   => '0',
 			'search'                   => '',
 			'operators'                => '',
-			'greater_than'             => false,
-			'less_than'                => false,
-			'display'                  => '',
+			'ds'                       => '',  // display string with placeholders
+			'dp'                       => '',  // display placeholders
 			'sort_key'                 => 'id',
 			'sort_direction'           => 'DESC',
 			'sort_is_num'              => true,
@@ -47,7 +65,6 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			'unique'                   => false,
 			'limit'                    => '1',
 			'search_mode'              => 'all',
-			'separator'                => '',
 			'search_empty'             => false,
 			'default'                  => '',
 			'link'                     => false,
@@ -71,28 +88,82 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	$content = html_entity_decode( $content, ENT_QUOTES );
 
-	$form_id = array_map( 'intval', explode( ',', $atts['target'] ) );
+	$form_id    = array_map( 'intval', explode( ',', $atts['target'] ) );
+	$form_count = count( $form_id );
 
 	$search_criteria                          = [];
 	$search_criteria['status']                = 'active';
 	$search_criteria['field_filters']         = [];
 	$search_criteria['field_filters']['mode'] = in_array( strtolower( $atts['search_mode'] ), [ 'all', 'any' ], true ) ? strtolower( $atts['search_mode'] ) : 'all';
 
-	if ( ! empty( $atts['search'] ) && empty( $atts['display'] ) && ! $atts['search_empty'] ) {
+	if ( ! empty( $atts['search'] ) && empty( $atts['ds'] ) && empty( $atts['dp'] ) && ! $atts['search_empty'] ) {
 		return '';
 	}
 
-	$search_ids = array_map( fn( $search_id ) => GFCommon::replace_variables( sanitize_text_field( $search_id ), [], [] ), explode( ',', $atts['search'] ) );
-	$search_ids = array_map( 'trim', $search_ids );
+	// convert search attribute to array of arrays
+	if ( str_contains( $atts['search'], 'array(' ) ) {
+		$json_string    = '[' . str_replace( [ 'array(', ')', "'" ], [ '[', ']', '"' ], $atts['search'] ) . ']';
+		$atts['search'] = json_decode( $json_string, true );
+
+	} else {
+		$atts['search'] = [ explode( ',', $atts['search'] ) ];
+	}
+
+	// Validate that the number of search arrays matches the number of form IDs
+	// Only check if there are multiple forms and search arrays
+	if ( $form_count > 1 && count( $atts['search'] ) > 1 && count( $atts['search'] ) !== $form_count ) {
+		return 'Error: The number of search arrays (' . count( $atts['search'] ) . ') does not match the number of form IDs (' . $form_count . ').';
+	}
+
+	$search_ids = array_map(
+		fn( $search_id_group ) => array_map(
+			fn( $search_id ) => trim( GFCommon::replace_variables( sanitize_text_field( $search_id ), [], [] ) ),
+			$search_id_group
+		),
+		$atts['search']
+	);
+
+	// content
+	if ( str_contains( $content, 'array(' ) ) {
+		$json_string = '[' . str_replace( [ 'array(', ')', "'" ], [ '[', ']', '"' ], $content ) . ']';
+	} else {
+		$json_string = '[[' . str_replace( "'", '"', $content ) . ']]';
+	}
+	$content_values = json_decode( $json_string, true );
+
+	// Validate that the number of content arrays matches the number of form IDs
+	// Only check if there are multiple forms and content arrays
+	if ( $form_count > 1 && count( $content_values ) > 1 && count( $content_values ) !== $form_count ) {
+		return 'Error: The number of content arrays (' . count( $content_values ) . ') does not match the number of form IDs (' . $form_count . ').';
+	}
+
+	$content_values = array_map(
+		fn( $value_group ) => array_map(
+			fn ( $value ) => trim( GFCommon::replace_variables( sanitize_text_field( $value ), [], [] ) ),
+			$value_group
+		),
+		$content_values
+	);
 
 	// Parse operators if provided
 	$operators = [];
 	if ( ! empty( $atts['operators'] ) ) {
-		$operators = array_map( 'trim', explode( ',', $atts['operators'] ) );
-		$operators = array_map( 'sanitize_text_field', $operators );
-	}
+		// convert operators attribute to array of arrays
+		if ( str_contains( $atts['operators'], 'array(' ) ) {
+			$json_string = '[' . str_replace( [ 'array(', ')', "'" ], [ '[', ']', '"' ], $atts['operators'] ) . ']';
+			$operators   = json_decode( $json_string, true );
+		} else {
+			// Support non-array format by converting to array format
+			$operators = [ array_map( 'trim', explode( ',', $atts['operators'] ) ) ];
+			$operators = [ array_map( 'sanitize_text_field', $operators[0] ) ];
+		}
 
-	$content_values = array_map( 'trim', explode( '|', $content ) );
+		// Validate that the number of operator arrays matches the number of form IDs
+		// Only check if there are multiple forms and operator arrays
+		if ( $form_count > 1 && count( $operators ) > 1 && count( $operators ) !== $form_count ) {
+			return 'Error: The number of operator arrays (' . count( $operators ) . ') does not match the number of form IDs (' . $form_count . ').';
+		}
+	}
 
 	foreach ( $search_ids as $index => $search_id ) {
 		if ( empty( $search_id ) ) {
@@ -103,6 +174,24 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			$content_values[ $index ] = str_replace( ',', '', $content_values[ $index ] );
 		}
 
+		if ( str_contains( $content_values[ $index ], 'array(' ) && in_array( $operators[ $index ], [ 'in', 'notin', 'not in' ], true ) ) {
+			$json_string              = str_replace( [ 'array(', ')', "'" ], [ '[', ']', '"' ], $content_values[ $index ] );
+			$content_values[ $index ] = json_decode( $json_string, true );
+			$content_values[ $index ] = array_map(
+				fn( $value ) => GFCommon::replace_variables( $value, [], [] ),
+				$content_values[ $index ]
+			);
+
+			$field_filter = [
+				'key'   => $search_id,
+				'value' => $content_values[ $index ],
+			];
+		} else {
+			$field_filter = [
+				'key'   => $search_id,
+				'value' => GFCommon::replace_variables( $content_values[ $index ], [], [] ),
+			];
+		}
 		// Add operator if provided for this field
 		if ( ! empty( $operators[ $index ] ) ) {
             /*
@@ -131,62 +220,15 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				'gt=',
 				'lt=',
 			];
-            if ( str_contains( $content_values[ $index ], 'array(' ) && in_array( $operators[ $index ], [ 'in', 'notin', 'not in' ], true ) ) {
-                $json_string              = str_replace( [ 'array(', ')', "'" ], [ '[', ']', '"' ], $content_values[ $index ] );
-                $content_values[ $index ] = json_decode( $json_string, true );
-                $content_values[ $index ] = array_map(
-                    fn( $value ) => GFCommon::replace_variables( $value, [], [] ),
-                    $content_values[ $index ]
-                );
-
-                $field_filter = [
-                    'key'   => $search_id,
-                    'value' => $content_values[ $index ],
-                ];
-            } else {
-                $field_filter = [
-                    'key'   => $search_id,
-                    'value' => GFCommon::replace_variables( $content_values[ $index ], [], [] ),
-                ];
-            }
 
 			if ( in_array( $operators[ $index ], $supported_operators, true ) ) {
                 $operators[ $index ]      = str_replace( 'gt', '>', $operators[ $index ] );
                 $operators[ $index ]      = str_replace( 'lt', '<', $operators[ $index ] );
 				$field_filter['operator'] = $operators[ $index ];
 			}
-		} else {
-            $field_filter = [
-                'key'   => $search_id,
-                'value' => GFCommon::replace_variables( $content_values[ $index ], [], [] ),
-            ];
-        }
+		}
 
 		$search_criteria['field_filters'][] = $field_filter;
-	}
-
-	// Process greater_than attribute
-	if ( $atts['greater_than'] ) {
-		$greater_than = array_map( 'trim', explode( ',', $atts['greater_than'] ) );
-		if ( count( $greater_than ) >= 2 ) {
-			$search_criteria['field_filters'][] = [
-				'key'      => intval( $greater_than[0] ),
-				'value'    => floatval( $greater_than[1] ),
-				'operator' => '>',
-			];
-		}
-	}
-
-	// Process less_than attribute
-	if ( $atts['less_than'] ) {
-		$less_than = array_map( 'trim', explode( ',', $atts['less_than'] ) );
-		if ( count( $less_than ) >= 2 ) {
-			$search_criteria['field_filters'][] = [
-				'key'      => intval( $less_than[0] ),
-				'value'    => floatval( $less_than[1] ),
-				'operator' => '<',
-			];
-		}
 	}
 
 	$sorting = [
@@ -299,52 +341,63 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	$results = [];
 
-	$atts['display'] = convert_curly_shortcodes( $atts['display'] );
+	// Process display attributes (ds and dp)
 
-	// Mask nested gfsearch shortcodes [gfsearch ...]...[/gfsearch]
-	// Mask only the display attribute value inside nested gfsearch shortcodes
-	$nested_gfsearch_map = [];
-	$masked_display      = $atts['display'];
+	// Initialize display variables
+	$display_ids     = [];
+	$tag_defaults    = [];
+	$display_strings = [];
 
-	// Mask display attribute in [gfsearch ... display="..." or display='...']...[/gfsearch]
-	$masked_display = preg_replace_callback(
-    '/(\[gfsearch[^\]]*?\sdisplay=("|\')(.*?)(\2)[^\]]*\])/i',
-    function ( $m ) use ( &$nested_gfsearch_map ) {
-        $key                         = '__NESTED_GFSEARCH_DISPLAY_' . count( $nested_gfsearch_map ) . '__';
-        $nested_gfsearch_map[ $key ] = $m[3];
-        // Replace only the display value
-        return str_replace( $m[3], $key, $m[0] );
-    },
-    $masked_display
-	);
+	// Process ds (display string) attribute
+	if ( ! empty( $atts['ds'] ) ) {
+		// Convert ds attribute to array of strings if it's in array format
+		if ( str_contains( $atts['ds'], 'array(' ) ) {
+			$json_string = '[' . str_replace( [ 'array(', ')', "'" ], [ '[', ']', '"' ], $atts['ds'] ) . ']';
+			$atts['ds']  = json_decode( $json_string, true );
 
-	// Updated regex: only match curly-brace {id}, {gfs:id}, {gfs:id;default} and plain gfs:id (not just numbers)
-	$regex = '/{(gfs:)?([^{};]+)(;([^{}]+))?}|\bgfs:([0-9]+)\b/';
-	preg_match_all( $regex, $masked_display, $matches, PREG_SET_ORDER );
+			// Validate that the number of ds arrays matches the number of form IDs
+			if ( $form_count > 1 && count( $atts['ds'] ) > 1 && count( $atts['ds'] ) !== $form_count ) {
+				return 'Error: The number of display string arrays (' . count( $atts['ds'] ) . ') does not match the number of form IDs (' . $form_count . ').';
+			}
+		} else {
+			// Support non-array format by converting to array format
+			$atts['ds'] = [ $atts['ds'] ];
+		}
 
-	$display_ids  = [];
-	$tag_defaults = [];
+		// Apply convert_curly_shortcodes to each ds string
+		$atts['ds']      = array_map( 'convert_curly_shortcodes', $atts['ds'] );
+		$display_strings = $atts['ds'];
+	}
 
-	if ( empty( $matches ) ) {
-		$display_ids = array_map( 'sanitize_text_field', explode( ',', $masked_display ) );
-		$display_ids = array_map( 'trim', $display_ids );
-	} else {
-		foreach ( $matches as $match ) {
-			// If curly-brace format, use those capture groups
-			if ( isset( $match[2] ) && '' !== $match[2] ) {
-				$field_id = $match[2];
+	// Process dp (display placeholders) attribute
+	if ( ! empty( $atts['dp'] ) ) {
+		// Convert dp attribute to array of arrays if it's in array format
+		if ( str_contains( $atts['dp'], 'array(' ) ) {
+			$json_string = '[' . str_replace( [ 'array(', ')', "'" ], [ '[', ']', '"' ], $atts['dp'] ) . ']';
+			$atts['dp']  = json_decode( $json_string, true );
+
+			// Validate that the number of dp arrays matches the number of form IDs
+			if ( $form_count > 1 && count( $atts['dp'] ) > 1 && count( $atts['dp'] ) != $form_count ) {
+				return 'Error: The number of display placeholder arrays (' . count( $atts['dp'] ) . ') does not match the number of form IDs (' . $form_count . ').';
+			}
+		} else {
+			// Support non-array format by converting to array format
+			$atts['dp'] = [ explode( ',', $atts['dp'] ) ];
+			$atts['dp'] = [ array_map( 'trim', $atts['dp'][0] ) ];
+		}
+
+		// Use the first form's placeholders by default
+		$display_ids = array_map( 'sanitize_text_field', $atts['dp'][0] );
+
+		// Extract any default values from placeholders with format {id;default}
+		foreach ( $display_ids as $display_id ) {
+			if ( preg_match( '/{(gfs:)?([^{};]+)(;([^{}]+))?}/', $display_id, $match ) ) {
 				if ( ! empty( $match[4] ) ) {
-					$tag_defaults[ $field_id ] = $match[4];
+					$tag_defaults[ $match[2] ] = $match[4];
 				}
-				$display_ids[] = sanitize_text_field( $field_id );
-				// If plain gfs:id format
-			} elseif ( isset( $match[5] ) && '' !== $match[5] ) {
-				$field_id      = $match[5];
-				$display_ids[] = sanitize_text_field( $field_id );
 			}
 		}
 	}
-	$display_ids = array_unique( $display_ids );
 
 	$multi_input_present = false;
 
@@ -353,15 +406,28 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	$default_count  = count( $default_values );
 
 	foreach ( $entries as $entry ) {
-		$entry_results = [];
-		foreach ( $display_ids as $index => $display_id ) {
+		// Determine which form's display format to use
+		$form_index = 0;
+		if ( $form_count > 1 ) {
+			// Find the index of the current entry's form_id in the form_id array
+			$form_index = array_search( $entry['form_id'], $form_id, true );
+			if ( $form_index === false ) {
+				$form_index = 0; // Default to first form if not found
+			}
+		}
 
+		// Get the display IDs for this form
+		$current_display_ids = $display_ids;
+		if ( ! empty( $atts['dp'] ) && isset( $atts['dp'][ $form_index ] ) ) {
+			$current_display_ids = array_map( 'sanitize_text_field', $atts['dp'][ $form_index ] );
+		}
+
+		$entry_results = [];
+		foreach ( $current_display_ids as $index => $display_id ) {
+			// Handle special placeholders
 			if ( 'meta' === $display_id ) {
-				if ( ! empty( wp_kses_post( $atts['separator'] ) ) ) {
-					$entry_results[ $display_id ] = implode( wp_kses_post( $atts['separator'] ), array_keys( $entry ) );
-				} else {
-					$entry_results[ $display_id ] = '<ul><li>' . implode( '</li><li>', array_keys( $entry ) ) . '</li></ul>';
-				}
+				// Use default list format for meta data
+				$entry_results[ $display_id ] = '<ul><li>' . implode( '</li><li>', array_keys( $entry ) ) . '</li></ul>';
 				continue;
 			}
 			if ( 'num_results' === $display_id ) {
@@ -417,52 +483,53 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		if ( '' === $atts['default'] || is_null( $atts['default'] ) ) {
 			$entry_results = array_filter( $entry_results, fn( $value ) => '' !== $value && ! is_null( $value ) );
 		}
-		if ( ! empty( $matches ) ) {
-			$display_format = wp_kses( $masked_display, $allowed_tags );
-			foreach ( $display_ids as $index => $display_id ) {
-				if ( 'num_results' === $display_id ) {
-					continue;
+
+		// Get the appropriate display string for this form
+		$display_string = isset( $display_strings[ $form_index ] ) ? $display_strings[ $form_index ] : $display_strings[0];
+
+		// Process the display string with the new placeholder format (gfs.1, gfs.2, etc.)
+		$display_format = wp_kses( $display_string, $allowed_tags );
+
+		// Replace placeholders in the format gfs.1, gfs.2, etc.
+		foreach ( $current_display_ids as $index => $display_id ) {
+			if ( 'num_results' === $display_id ) {
+				continue;
+			}
+
+			$value = $entry_results[ $display_id ] ?? '';
+
+			// If the value is empty and this is the first placeholder, use default if available
+			if ( ! $value && 0 === $index ) {
+				if ( isset( $tag_defaults[ $display_id ] ) ) {
+					$value = wp_kses_post( $tag_defaults[ $display_id ] );
+				} else {
+					$display_format = '';
+					break;
 				}
+			}
 
-				$value = $entry_results[ $display_id ] ?? '';
+			// Replace new format placeholders (gfs.1, gfs.2, etc.)
+			$placeholder_index = $index + 1; // 1-based indexing for placeholders
+			$display_format    = preg_replace( '/([\'"])gfs\.' . $placeholder_index . '\\1/', $value, $display_format );
 
-				// If the value is empty and this is the first placeholder, use tag-specific default if available
-				if ( ! $value && 0 === $index ) {
-					if ( isset( $tag_defaults[ $display_id ] ) ) {
-						$value = wp_kses_post( $tag_defaults[ $display_id ] );
-					} else {
-						$display_format = '';
-						break;
-					}
-				}
-
-				// Replace curly-brace formats first
-				$display_format = str_replace( '{gfs:' . $display_id . '}', $value, $display_format );
-				$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
-				// Replace {gfs:id;default-value} format
-				$pattern        = '/{gfs:' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
-				$display_format = preg_replace( $pattern, $value, $display_format );
-				$pattern        = '/{' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
-				$display_format = preg_replace( $pattern, $value, $display_format );
-				// Replace plain gfs:id only when not part of a larger word or attribute (not preceded/followed by [\w\.:])
-				$display_format = preg_replace( '/(?<![\w\.:])gfs:' . preg_quote( $display_id, '/' ) . '(?![\w\.:])/', $value, $display_format );
-			}
-			// Restore masked display attributes in nested gfsearch
-			if ( ! empty( $nested_gfsearch_map ) ) {
-				$display_format = strtr( $display_format, $nested_gfsearch_map );
-			}
-			$result_text = $display_format;
-			if ( $atts['link'] ) {
-				$result_text = '<a target="_blank" href="' . admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $entry['form_id'] . '&lid=' . $entry['id'] ) . '">' . $result_text . '</a>';
-			}
-			$results[] = $result_text;
-		} else {
-			$result_text = implode( ', ', $entry_results );
-			if ( $atts['link'] ) {
-				$result_text = '<a target="_blank"  href="' . admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $entry['form_id'] . '&lid=' . $entry['id'] ) . '">' . $result_text . '</a>';
-			}
-			$results[] = $result_text;
+			// Also support the legacy format for backward compatibility
+			$display_format = str_replace( '{gfs:' . $display_id . '}', $value, $display_format );
+			$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
+			$pattern        = '/{gfs:' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+			$display_format = preg_replace( $pattern, $value, $display_format );
+			$pattern        = '/{' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+			$display_format = preg_replace( $pattern, $value, $display_format );
+			$display_format = preg_replace( '/(?<![\w\.:])gfs:' . preg_quote( $display_id, '/' ) . '(?![\w\.:])/', $value, $display_format );
 		}
+
+		$result_text = $display_format;
+
+		// Add link if requested
+		if ( $atts['link'] ) {
+			$result_text = '<a target="_blank" href="' . admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $entry['form_id'] . '&lid=' . $entry['id'] ) . '">' . $result_text . '</a>';
+		}
+
+		$results[] = $result_text;
 	}
 
 	$results = array_map( 'trim', $results );
@@ -474,13 +541,8 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		return wp_kses_post( $default_values[0] ?? '' );
 	}
 
-	if ( empty( $atts['separator'] ) ) {
-		$separator = ( count( $display_ids ) > 1 || $multi_input_present ) ? '; ' : ', ';
-	} elseif ( strtolower( '__none__' ) === $atts['separator'] ) {
-		$separator = '';
-	} else {
-		$separator = wp_kses_post( $atts['separator'] );
-	}
+	// Use default separator
+	$separator = ( count( $display_ids ) > 1 || $multi_input_present ) ? '; ' : ', ';
 
 	// Process shortcodes first, then apply uniqueness to the final output
 	$final_results = array_map(
