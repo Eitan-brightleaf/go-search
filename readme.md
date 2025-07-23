@@ -11,7 +11,7 @@ tailored to your exact needs.
 - **Field Filtering:** Search or display multiple fields simultaneously using field IDs and corresponding values.
 - **Custom Formatting:** Customize output using placeholders and HTML formatting, supporting field data and meta-properties.
 - **Sorting Options:** Primary and secondary sorting by ascending, descending, or random order.
-- **Comparison Filters:** Filter numeric fields by values (`greater_than`, `less_than`). 
+- **Comparison Filters:** Filter numeric fields by values (greater than or less than). 
 - **Global Search:** Search all form fields for specific values easily.
 - **Unique Results:** Eliminate duplicate entries by enabling the `unique` option.
 - **Advanced Search Modes:** Match any condition (`search_mode="any"`) or all conditions (default).
@@ -31,10 +31,9 @@ This displays the value of field ID 13 from the latest entry in form 1.
 |--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
 | **`target`**                   | Specify forms to search: `0` for all forms, or comma-separated list of form IDs (e.g., `target="1,2"`).                                                                                                                  | (all forms) `0` |
 | **`search`**                   | Field IDs/entry properties for filtering entries. Separate multiple IDs by a comma (`search="13,14"`). The corresponding values to search for should be placed in the shortcode content, separated by the pipe operator. | _(None)_        |
+| **`operators`**                | Comma-separated list of operators that correspond to each field in the `search` attribute. See documentation below for a list of supported operators.                                                                    | _(None)_        |
 | **`display`**                  | Comma separated list of field IDs/entry properties to display. Also allows formating results with placeholders.                                                                                                          | _(Required)_    |
 | **`search_mode`**              | Match all conditions (`all`, default) or any condition (`any`).                                                                                                                                                          | `all`           |
-| **`greater_than`**             | Filter numeric values greater than a threshold, e.g., `greater_than="4, 1000"` where 4 is the field ID and 1000 is the threshold.                                                                                        | _(None)_        |
-| **`less_than`**                | Filter numeric values less than a threshold, e.g., `less_than="6, 50"` where 6 is the field ID and 50 is the threshold.                                                                                                  | _(None)_        |
 | **`sort_key`**                 | Field/property to sort entries (e.g., field ID or meta key).                                                                                                                                                             | `id` (entry ID) |
 | **`sort_direction`**           | Sorting direction: `ASC`, `DESC`, or `RAND`.                                                                                                                                                                             | `DESC`          |
 | **`sort_is_num`**              | Indicates if sorting is numeric (true/false).                                                                                                                                                                            | `true`          |
@@ -274,7 +273,91 @@ John
 This could output something like:
 
 > Submitted by John Smith on 2024-07-15. Related: Completed
+## ⚖️ Operators Attribute
 
+The `operators` attribute allows you to define **how each search value is compared** to its corresponding field in the `search` attribute. It should be a **comma-separated list**, with each operator matching its position to the same-positioned field ID in the `search` attribute.
+
+### ✅ Supported Operators
+
+| Operator                | Meaning                                |
+|-------------------------|----------------------------------------|
+| `=` or `is`             | Equals                                 |
+| `!=`, `isnot`, `is not` | Not equal to                           |
+| `contains`              | Partial match                          |
+| `like`                  | SQL-style `LIKE` with custom wildcards |
+| `in`                    | Value is in array                      |
+| `notin`, `not in`       | Value is NOT in array                  |
+| `gt`                    | Greater than                           |
+| `lt`                    | Less than                              |
+| `gt=`                   | Greater than or equal to               |
+| `lt=`                   | Less than or equal to                  |
+
+> 💡 To compare against multiple values using `in` or `not in`, pass a PHP-style array in the shortcode content, like:
+>
+> ```markdown
+> array('item one', 'item two', 'item three')
+> ```
+
+---
+
+### 🔄 Operator Matching Behavior
+
+Each operator in `operators` must match the position of a field in the `search` attribute:
+
+* ✅ If you pass **fewer operators** than `search` fields:
+
+    * The **remaining fields default to** `=` (exact match).
+    * This lets you apply advanced filters only where needed.
+* ⚠️ If you pass **more operators** than `search` fields:
+    * **Extra operators are ignored.**
+* ❌ If `operators` is omitted entirely:
+    * **All search fields use `=` by default.**
+
+---
+
+### 🧪 Examples
+
+#### Basic match with mixed operators
+
+```markdown
+[gfsearch search="3,5,8" operators="contains,=,gt"]
+Smith|john@example.com|50
+[/gfsearch]
+```
+
+* Field 3 must *contain* "Smith"
+* Field 5 must *equal* "[john@example.com](mailto:john@example.com)"
+* Field 8 must be *greater than* 50
+
+#### Using array for `in`
+
+```markdown
+[gfsearch search="5" operators="in"]
+array('yes','maybe')
+[/gfsearch]
+```
+
+* Field 5 must match one of the given values
+
+#### Mixing defaults and explicit operators
+
+```markdown
+[gfsearch search="3,5,8" operators="contains"]
+Smith|john@example.com|50
+[/gfsearch]
+```
+
+* Field 3 uses `contains`
+* Field 5 and 8 default to `=`
+
+---
+
+### 📌 Tips & Gotchas
+
+* **Array format:** Use `array('one','two')` exactly—do not just write comma-separated values.
+* **Order matters:** Ensure your `operators` match the order of `search` fields.
+* If a field is repeated in `search`, you can still assign distinct operators per instance.
+* The `greater_than` and `less_than` attributes are deprecated in favor of the new `operators` attribute.
 
 ## ❗ Notes and Best Practices
 
