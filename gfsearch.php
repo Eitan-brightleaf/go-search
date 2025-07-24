@@ -6,7 +6,6 @@
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
- *
  */
 
 add_action(
@@ -73,6 +72,10 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		'gfsearch'
 	);
 
+	if ( ! empty( $atts['search'] ) && empty( $atts['ds'] ) && empty( $atts['dp'] ) && ! $atts['search_empty'] ) {
+		return '';
+	}
+
 	// Allow everything wp_kses_post allows plus <a> and its attributes
 	$allowed_tags      = wp_kses_allowed_html( 'post' );
 	$a_tags            = [
@@ -88,17 +91,14 @@ function gfsearch_shortcode( $atts, $content = null ) {
 
 	$content = html_entity_decode( $content, ENT_QUOTES );
 
-	$form_id    = array_map( 'intval', explode( ',', $atts['target'] ) );
-	$form_count = count( $form_id );
+	$form_ids   = array_map( 'intval', explode( ',', $atts['target'] ) );
+	$form_count = count( $form_ids );
 
-	$search_criteria                          = [];
-	$search_criteria['status']                = 'active';
-	$search_criteria['field_filters']         = [];
-	$search_criteria['field_filters']['mode'] = in_array( strtolower( $atts['search_mode'] ), [ 'all', 'any' ], true ) ? strtolower( $atts['search_mode'] ) : 'all';
+	$search_criteria                  = [];
+	$search_criteria['status']        = 'active';
+	$search_criteria['field_filters'] = [];
 
-	if ( ! empty( $atts['search'] ) && empty( $atts['ds'] ) && empty( $atts['dp'] ) && ! $atts['search_empty'] ) {
-		return '';
-	}
+	$search_modes = array_map( 'trim', explode( ',', $atts['search_mode'] ) );
 
 	// convert search attribute to array of arrays
 	if ( str_contains( $atts['search'], 'array(' ) ) {
@@ -377,7 +377,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			$atts['dp']  = json_decode( $json_string, true );
 
 			// Validate that the number of dp arrays matches the number of form IDs
-			if ( $form_count > 1 && count( $atts['dp'] ) > 1 && count( $atts['dp'] ) != $form_count ) {
+			if ( $form_count > 1 && count( $atts['dp'] ) > 1 && count( $atts['dp'] ) !== $form_count ) {
 				return 'Error: The number of display placeholder arrays (' . count( $atts['dp'] ) . ') does not match the number of form IDs (' . $form_count . ').';
 			}
 		} else {
@@ -411,7 +411,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		if ( $form_count > 1 ) {
 			// Find the index of the current entry's form_id in the form_id array
 			$form_index = array_search( $entry['form_id'], $form_id, true );
-			if ( $form_index === false ) {
+			if ( false === $form_index ) {
 				$form_index = 0; // Default to first form if not found
 			}
 		}
@@ -485,7 +485,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		}
 
 		// Get the appropriate display string for this form
-		$display_string = isset( $display_strings[ $form_index ] ) ? $display_strings[ $form_index ] : $display_strings[0];
+		$display_string = $display_strings[ $form_index ] ?? $display_strings[0];
 
 		// Process the display string with the new placeholder format (gfs.1, gfs.2, etc.)
 		$display_format = wp_kses( $display_string, $allowed_tags );
@@ -541,9 +541,6 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		return wp_kses_post( $default_values[0] ?? '' );
 	}
 
-	// Use default separator
-	$separator = ( count( $display_ids ) > 1 || $multi_input_present ) ? '; ' : ', ';
-
 	// Process shortcodes first, then apply uniqueness to the final output
 	$final_results = array_map(
 	function ( $result ) use ( $allowed_tags ) {
@@ -563,7 +560,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	$final_results
         );
 
-	return implode( $separator, $final_results );
+	return implode( '', $final_results );
 }
 
 /**
