@@ -82,14 +82,13 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		return '';
 	}
 
-	$search_ids = array_map( fn( $search_id ) => GFCommon::replace_variables( sanitize_text_field( $search_id ), [], [] ), explode( ',', $atts['search'] ) );
+	$search_ids = array_map( fn( $search_id ) => GFCommon::replace_variables( $search_id, [], [] ), explode( ',', $atts['search'] ) );
 	$search_ids = array_map( 'trim', $search_ids );
 
 	// Parse operators if provided
 	$operators = [];
 	if ( ! empty( $atts['operators'] ) ) {
 		$operators = array_map( 'trim', explode( ',', $atts['operators'] ) );
-		$operators = array_map( 'sanitize_text_field', $operators );
 	}
 
 	$content_values = array_map( 'trim', explode( '|', $content ) );
@@ -357,8 +356,8 @@ function gfsearch_shortcode( $atts, $content = null ) {
 		foreach ( $display_ids as $index => $display_id ) {
 
 			if ( 'meta' === $display_id ) {
-				if ( ! empty( wp_kses_post( $atts['separator'] ) ) ) {
-					$entry_results[ $display_id ] = implode( wp_kses_post( $atts['separator'] ), array_keys( $entry ) );
+				if ( ! empty( $atts['separator'] ) ) {
+					$entry_results[ $display_id ] = implode( $atts['separator'], array_keys( $entry ) );
 				} else {
 					$entry_results[ $display_id ] = '<ul><li>' . implode( '</li><li>', array_keys( $entry ) ) . '</li></ul>';
 				}
@@ -398,13 +397,13 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			if ( '' === $field_value || is_null( $field_value ) ) {
 				// Check if there's a tag-specific default value for this field
 				if ( isset( $tag_defaults[ $display_id ] ) ) {
-					$field_value = wp_kses_post( $tag_defaults[ $display_id ] );
+					$field_value = $tag_defaults[ $display_id ];
 				} elseif ( 1 === $default_count ) { // Otherwise use the global default values
 					// If there's only one default value, use it for all display values
-					$field_value = wp_kses_post( $default_values[0] );
+					$field_value = $default_values[0];
 				} elseif ( $index < $default_count ) {
 					// If there are multiple default values, use the corresponding one
-					$field_value = wp_kses_post( $default_values[ $index ] );
+					$field_value = $default_values[ $index ];
 				} else {
 					$field_value = '';
 				}
@@ -429,7 +428,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 				// If the value is empty and this is the first placeholder, use tag-specific default if available
 				if ( ! $value && 0 === $index ) {
 					if ( isset( $tag_defaults[ $display_id ] ) ) {
-						$value = wp_kses_post( $tag_defaults[ $display_id ] );
+						$value = $tag_defaults[ $display_id ];
 					} else {
 						$display_format = '';
 						break;
@@ -479,7 +478,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 	} elseif ( strtolower( '__none__' ) === $atts['separator'] ) {
 		$separator = '';
 	} else {
-		$separator = wp_kses_post( $atts['separator'] );
+		$separator = $atts['separator'];
 	}
 
 	// Process shortcodes first, then apply uniqueness to the final output
