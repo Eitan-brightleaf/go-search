@@ -370,7 +370,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			$field = GFAPI::get_field( $entry['form_id'], $display_id );
 			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			if ( $field && 'number' === $field->type ) {
-				$field_value = GFCommon::format_number( $entry[ $display_id ], $field->numberFormat, $entry['currency'], true );
+				$field_value = GFCommon::format_number( $entry[ $display_id ], $field['numberFormat'], $entry['currency'], true );
 			} elseif ( $field && 'date' === $field->type ) {
 				$field_value = GFCommon::date_display( $entry[ $display_id ], 'Y-m-d', $field->dateFormat );
 			} elseif ( $field && is_multi_input_field( $field ) && ! str_contains( $display_id, '.' ) ) {
