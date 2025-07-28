@@ -452,13 +452,13 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			}
 			$result_text = $display_format;
 			if ( $atts['link'] ) {
-				$result_text = '<a target="_blank" href="' . admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $entry['form_id'] . '&lid=' . $entry['id'] ) . '">' . $result_text . '</a>';
+				$result_text = '<a target="_blank" href="' . esc_url( admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $entry['form_id'] . '&lid=' . $entry['id'] ) ) . '">' . $result_text . '</a>';
 			}
 			$results[] = $result_text;
 		} else {
 			$result_text = implode( ', ', $entry_results );
 			if ( $atts['link'] ) {
-				$result_text = '<a target="_blank"  href="' . admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $entry['form_id'] . '&lid=' . $entry['id'] ) . '">' . $result_text . '</a>';
+				$result_text = '<a target="_blank"  href="' . esc_url( admin_url( 'admin.php?page=gf_entries&view=entry&id=' . $entry['form_id'] . '&lid=' . $entry['id'] ) ) . '">' . $result_text . '</a>';
 			}
 			$results[] = $result_text;
 		}
