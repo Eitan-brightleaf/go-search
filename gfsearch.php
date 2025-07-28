@@ -525,6 +525,7 @@ function is_multi_input_field( $field ): bool {
  * @return string The converted content with standard WordPress-style shortcodes.
  */
 function convert_curly_shortcodes( $content ) {
+	/* @var array<int, array{0: string, 1: int}> $open_match */
 	while ( preg_match( '/\{\{(\w+)\b(.*?)\}\}/s', $content, $open_match, PREG_OFFSET_CAPTURE ) ) {
 		$tag       = $open_match[1][0];
 		$attrs     = $open_match[2][0];
