@@ -418,7 +418,7 @@ function gfsearch_shortcode( $atts, $content = null ) {
 			$entry_results = array_filter( $entry_results, fn( $value ) => '' !== $value && ! is_null( $value ) );
 		}
 		if ( ! empty( $matches ) ) {
-			$display_format = wp_kses( $masked_display, $allowed_tags );
+			$display_format = $masked_display;
 			foreach ( $display_ids as $index => $display_id ) {
 				if ( 'num_results' === $display_id ) {
 					continue;
