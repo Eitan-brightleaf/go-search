@@ -6,6 +6,7 @@
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
+ * Plugin URI: https://digital.brightleaf.info/code/entry/44-gfsearch-shortcode/
  */
 
 // If this file is called directly, abort.
@@ -13,20 +14,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-GFForms::include_addon_framework();
-
 /**
  * GFSearch class
  *
  * Main class for the gfsearch plugin that extends GFAddOn
  */
-class GFSearch extends GFAddOn {
+class GO_GFSearch extends GFAddOn {
 
 	// phpcs:disable PSR2.Classes.PropertyDeclaration.Underscore
 	/**
 	 * Holds the singleton instance of the class.
 	 *
-	 * @var GFSearch $_instance If available, contains an instance of this class.
+	 * @var GO_GFSearch $_instance If available, contains an instance of this class.
 	 */
 	private static $_instance = null;
 
@@ -69,7 +68,7 @@ class GFSearch extends GFAddOn {
 	/**
 	 * Get instance of this class.
 	 *
-	 * @return GFSearch
+	 * @return GO_GFSearch
 	 */
 	public static function get_instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -630,8 +629,9 @@ class GFSearch extends GFAddOn {
 add_action(
     'gform_loaded',
     function () {
+	    GFForms::include_addon_framework();
 		if ( class_exists( 'GFAddOn' ) ) {
-			GFAddOn::register( 'GFSearch' );
+			GFAddOn::register( 'GO_GFSearch' );
 		}
 	},
     5
