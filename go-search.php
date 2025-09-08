@@ -1,12 +1,11 @@
 <?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 /**
- * Plugin Name: gfsearch
+ * Plugin Name: GravityOps Search
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
  * Version: 1.2.4
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
- * Plugin URI: https://digital.brightleaf.info/code/entry/44-gfsearch-shortcode/
  */
 
 // If this file is called directly, abort.
@@ -15,17 +14,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * GFSearch class
+ * GravityOps_Search class
  *
- * Main class for the gfsearch plugin that extends GFAddOn
+ * Main class for the GravityOps_Search plugin that extends GFAddOn
  */
-class GO_GFSearch extends GFAddOn {
+class GravityOps_Search extends GFAddOn {
 
 	// phpcs:disable PSR2.Classes.PropertyDeclaration.Underscore
 	/**
 	 * Holds the singleton instance of the class.
 	 *
-	 * @var GO_GFSearch $_instance If available, contains an instance of this class.
+	 * @var GravityOps_Search $_instance If available, contains an instance of this class.
 	 */
 	private static $_instance = null;
 
@@ -41,7 +40,7 @@ class GO_GFSearch extends GFAddOn {
 	 *
 	 * @var string Plugin slug.
 	 */
-	protected $_slug = 'gfsearch';
+	protected $_slug = 'go_search';
 
 	/**
 	 * The full file path of the current script.
@@ -55,20 +54,20 @@ class GO_GFSearch extends GFAddOn {
 	 *
 	 * @var string Title of the plugin to be used in UI.
 	 */
-	protected $_title = 'GFSearch';
+	protected $_title = 'GravityOps Search';
 
 	/**
 	 * The short title of the plugin.
 	 *
 	 * @var string Short version of the plugin title to be used in menus.
 	 */
-	protected $_short_title = 'GFSearch';
+	protected $_short_title = 'GO Search';
 	// phpcs:enable PSR2.Classes.PropertyDeclaration.Underscore
 
 	/**
 	 * Get instance of this class.
 	 *
-	 * @return GO_GFSearch
+	 * @return GravityOps_Search
 	 */
 	public static function get_instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -83,11 +82,11 @@ class GO_GFSearch extends GFAddOn {
 	 */
 	public function init() {
 		parent::init();
-		add_shortcode( 'gfsearch', [ $this, 'gfsearch_shortcode' ] );
+		add_shortcode( 'go_search', [ $this, 'go_search_shortcode' ] );
 	}
 
 	/**
-	 * Processes the gfsearch shortcode to perform searching and displaying Gravity Forms entries
+	 * Processes the go_search shortcode to perform searching and displaying Gravity Forms entries
 	 * based on specified criteria and attributes.
 	 *
 	 * @param array  $atts An associative array of attributes, or default values.
@@ -95,7 +94,7 @@ class GO_GFSearch extends GFAddOn {
 	 *
 	 * @return string|false Formatted search results or false if search fails due to missing attributes or invalid setup.
 	 */
-	public function gfsearch_shortcode( $atts, $content = null ) {
+	public function go_search_shortcode( $atts, $content = null ) {
 		$result = apply_filters( 'gogv_shortcode_process', $content );
 		if ( $result !== $content ) {
 			return $result;
@@ -123,7 +122,7 @@ class GO_GFSearch extends GFAddOn {
 				'link'                     => false,
 			],
 			$atts,
-			'gfsearch'
+			'go_search'
 		);
 
 		// Allow everything wp_kses_post allows plus <a> and its attributes
@@ -370,25 +369,25 @@ class GO_GFSearch extends GFAddOn {
 
 		$atts['display'] = $this->convert_curly_shortcodes( $atts['display'] );
 
-		// Mask nested gfsearch shortcodes [gfsearch ...]...[/gfsearch]
-		// Mask only the display attribute value inside nested gfsearch shortcodes
-		$nested_gfsearch_map = [];
-		$masked_display      = $atts['display'];
+		// Mask nested go_search shortcodes [go_search ...]...[/go_search]
+		// Mask only the display attribute value inside nested go_search shortcodes
+		$nested_go_search_map = [];
+		$masked_display       = $atts['display'];
 
-		// Mask display attribute in [gfsearch ... display="..." or display='...']...[/gfsearch]
+		// Mask display attribute in [go_search ... display="..." or display='...']...[/go_search]
 		$masked_display = preg_replace_callback(
-			'/(\[gfsearch[^\]]*?\sdisplay=("|\')(.*?)(\2)[^\]]*\])/i',
-			function ( $m ) use ( &$nested_gfsearch_map ) {
-				$key                         = '__NESTED_GFSEARCH_DISPLAY_' . count( $nested_gfsearch_map ) . '__';
-				$nested_gfsearch_map[ $key ] = $m[3];
+			'/(\[go_search[^\]]*?\sdisplay=("|\')(.*?)(\2)[^\]]*\])/i',
+			function ( $m ) use ( &$nested_go_search_map ) {
+				$key                          = '__NESTED_GOSEARCH_DISPLAY_' . count( $nested_go_search_map ) . '__';
+				$nested_go_search_map[ $key ] = $m[3];
 				// Replace only the display value
 				return str_replace( $m[3], $key, $m[0] );
 			},
 			$masked_display
 		);
 
-		// Updated regex: only match curly-brace {id}, {gfs:id}, {gfs:id;default} and plain gfs:id (not just numbers)
-		$regex = '/{(gfs:)?([^{};]+)(;([^{}]+))?}|\bgfs:([0-9]+)\b/';
+		// Updated regex: only match curly-brace {id}, {gos:id}, {gos:id;default} and plain gos:id (not just numbers)
+		$regex = '/{(gos:)?([^{};]+)(;([^{}]+))?}|\bgos:([0-9]+)\b/';
 		preg_match_all( $regex, $masked_display, $matches, PREG_SET_ORDER );
 
 		$display_ids  = [];
@@ -406,7 +405,7 @@ class GO_GFSearch extends GFAddOn {
 						$tag_defaults[ $field_id ] = $match[4];
 					}
 					$display_ids[] = sanitize_text_field( $field_id );
-					// If plain gfs:id format
+					// If plain gos:id format
 				} elseif ( isset( $match[5] ) && '' !== $match[5] ) {
 					$field_id      = $match[5];
 					$display_ids[] = sanitize_text_field( $field_id );
@@ -506,19 +505,19 @@ class GO_GFSearch extends GFAddOn {
 					}
 
 					// Replace curly-brace formats first
-					$display_format = str_replace( '{gfs:' . $display_id . '}', $value, $display_format );
+					$display_format = str_replace( '{gos:' . $display_id . '}', $value, $display_format );
 					$display_format = str_replace( '{' . $display_id . '}', $value, $display_format );
-					// Replace {gfs:id;default-value} format
-					$pattern        = '/{gfs:' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
+					// Replace {gos:id;default-value} format
+					$pattern        = '/{gos:' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
 					$display_format = preg_replace( $pattern, $value, $display_format );
 					$pattern        = '/{' . preg_quote( $display_id, '/' ) . ';[^{}]+}/';
 					$display_format = preg_replace( $pattern, $value, $display_format );
-					// Replace plain gfs:id only when not part of a larger word or attribute (not preceded/followed by [\w\.:])
-					$display_format = preg_replace( '/(?<![\w\.:])gfs:' . preg_quote( $display_id, '/' ) . '(?![\w\.:])/', $value, $display_format );
+					// Replace plain gos:id only when not part of a larger word or attribute (not preceded/followed by [\w\.:])
+					$display_format = preg_replace( '/(?<![\w\.:])gos:' . preg_quote( $display_id, '/' ) . '(?![\w\.:])/', $value, $display_format );
 				}
-				// Restore masked display attributes in nested gfsearch
-				if ( ! empty( $nested_gfsearch_map ) ) {
-					$display_format = strtr( $display_format, $nested_gfsearch_map );
+				// Restore masked display attributes in nested go_search
+				if ( ! empty( $nested_go_search_map ) ) {
+					$display_format = strtr( $display_format, $nested_go_search_map );
 				}
 				$result_text = $display_format;
 				if ( $atts['link'] ) {
@@ -563,12 +562,12 @@ class GO_GFSearch extends GFAddOn {
 			$final_results = array_unique( $final_results );
 		}
 
-		$final_results = array_map(
-			function ( $result ) use ( $final_results ) {
-				return str_replace( '{gfs:num_results}', count( $final_results ), $result );
-			},
-			$final_results
-		);
+			$final_results = array_map(
+				function ( $result ) use ( $final_results ) {
+					return str_replace( '{gos:num_results}', count( $final_results ), $result );
+				},
+				$final_results
+			);
 
 		return implode( $separator, $final_results );
 	}
@@ -631,7 +630,7 @@ add_action(
     function () {
 	    GFForms::include_addon_framework();
 		if ( class_exists( 'GFAddOn' ) ) {
-			GFAddOn::register( 'GO_GFSearch' );
+			GFAddOn::register( 'GravityOps_Search' );
 		}
 	},
     5
