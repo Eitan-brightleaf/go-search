@@ -1,5 +1,5 @@
 === GravityOps Search ===
-Contributors: brightleafdigital
+Contributors: eitanatbrightleaf
 Tags: gravity forms, search, shortcode, entries, form data
 Requires at least: 5.0
 Tested up to: 6.8
