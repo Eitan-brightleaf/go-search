@@ -12,7 +12,7 @@ A shortcode to search and display Gravity Forms entries based on specified crite
 
 == Description ==
 
-GravityOps Search provides a powerful shortcode `[go_search]` that allows you to search and display Gravity Forms entries based on custom criteria. This plugin extends the Gravity Forms functionality by enabling frontend display of form entries with advanced filtering, sorting, and formatting options.
+GravityOps Search provides a powerful shortcode `[gravops_search]` that allows you to search and display Gravity Forms entries based on custom criteria. This plugin extends the Gravity Forms functionality by enabling frontend display of form entries with advanced filtering, sorting, and formatting options.
 
 = Key Features =
 
@@ -29,10 +29,10 @@ GravityOps Search provides a powerful shortcode `[go_search]` that allows you to
 = Shortcode Usage =
 
 Basic usage:
-`[go_search target="1" search="2" display="1,2"]Search Value[/go_search]`
+`[gravops_search target="1" search="2" display="1,2"]Search Value[/gravops_search]`
 
 Advanced usage with operators:
-`[go_search target="1" search="2,3" operators="contains,=" display="1,2,3" limit="10" sort_key="date_created" sort_direction="DESC"]Value1|Value2[/go_search]`
+`[gravops_search target="1" search="2,3" operators="contains,=" display="1,2,3" limit="10" sort_key="date_created" sort_direction="DESC"]Value1|Value2[/gravops_search]`
 
 = Supported Attributes =
 
@@ -54,7 +54,7 @@ Advanced usage with operators:
 1. Upload the plugin files to the `/wp-content/plugins/go-search` directory, or install the plugin through the WordPress plugins screen directly.
 2. Activate the plugin through the 'Plugins' screen in WordPress.
 3. Make sure you have Gravity Forms installed and activated.
-4. Use the `[go_search]` shortcode in your posts, pages, or widgets.
+4. Use the `[gravops_search]` shortcode in your posts, pages, or widgets.
 
 == Frequently Asked Questions ==
 

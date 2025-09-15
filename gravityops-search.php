@@ -40,7 +40,7 @@ class GravityOps_Search extends GFAddOn {
 	 *
 	 * @var string Plugin slug.
 	 */
-	protected $_slug = 'go_search';
+	protected $_slug = 'gravops_search';
 
 	/**
 	 * The full file path of the current script.
@@ -61,7 +61,7 @@ class GravityOps_Search extends GFAddOn {
 	 *
 	 * @var string Short version of the plugin title to be used in menus.
 	 */
-	protected $_short_title = 'GO Search';
+	protected $_short_title = 'GravOps Search';
 	// phpcs:enable PSR2.Classes.PropertyDeclaration.Underscore
 
 	/**
@@ -82,11 +82,11 @@ class GravityOps_Search extends GFAddOn {
 	 */
 	public function init() {
 		parent::init();
-		add_shortcode( 'go_search', [ $this, 'go_search_shortcode' ] );
+		add_shortcode( 'gravops_search', [ $this, 'gravops_search' ] );
 	}
 
 	/**
-	 * Processes the go_search shortcode to perform searching and displaying Gravity Forms entries
+	 * Processes the gravops_search shortcode to perform searching and displaying Gravity Forms entries
 	 * based on specified criteria and attributes.
 	 *
 	 * @param array  $atts An associative array of attributes, or default values.
@@ -94,7 +94,7 @@ class GravityOps_Search extends GFAddOn {
 	 *
 	 * @return string|false Formatted search results or false if search fails due to missing attributes or invalid setup.
 	 */
-	public function go_search_shortcode( $atts, $content = null ) {
+	public function gravops_search( $atts, $content = null ) {
 		$result = apply_filters( 'gogv_shortcode_process', $content );
 		if ( $result !== $content ) {
 			return $result;
@@ -122,7 +122,7 @@ class GravityOps_Search extends GFAddOn {
 				'link'                     => false,
 			],
 			$atts,
-			'go_search'
+			'gravops_search'
 		);
 
 		// Allow everything wp_kses_post allows plus <a> and its attributes
@@ -369,17 +369,17 @@ class GravityOps_Search extends GFAddOn {
 
 		$atts['display'] = $this->convert_curly_shortcodes( $atts['display'] );
 
-		// Mask nested go_search shortcodes [go_search ...]...[/go_search]
-		// Mask only the display attribute value inside nested go_search shortcodes
-		$nested_go_search_map = [];
-		$masked_display       = $atts['display'];
+		// Mask nested gravops_search shortcodes [gravops_search ...]...[/gravops_search]
+		// Mask only the display attribute value inside nested gravops_search shortcodes
+		$nested_gravops_search_map = [];
+		$masked_display            = $atts['display'];
 
-		// Mask display attribute in [go_search ... display="..." or display='...']...[/go_search]
+		// Mask display attribute in [gravops_search ... display="..."]...[/gravops_search]
 		$masked_display = preg_replace_callback(
-			'/(\[go_search[^\]]*?\sdisplay=("|\')(.*?)(\2)[^\]]*\])/i',
-			function ( $m ) use ( &$nested_go_search_map ) {
-				$key                          = '__NESTED_GOSEARCH_DISPLAY_' . count( $nested_go_search_map ) . '__';
-				$nested_go_search_map[ $key ] = $m[3];
+			'/(\[gravops_search[^\]]*?\sdisplay=("|\')(.*?)(\2)[^\]]*\])/i',
+			function ( $m ) use ( &$nested_gravops_search_map ) {
+				$key                               = '__NESTED_GOSEARCH_DISPLAY_' . count( $nested_gravops_search_map ) . '__';
+				$nested_gravops_search_map[ $key ] = $m[3];
 				// Replace only the display value
 				return str_replace( $m[3], $key, $m[0] );
 			},
@@ -515,9 +515,9 @@ class GravityOps_Search extends GFAddOn {
 					// Replace plain gos:id only when not part of a larger word or attribute (not preceded/followed by [\w\.:])
 					$display_format = preg_replace( '/(?<![\w\.:])gos:' . preg_quote( $display_id, '/' ) . '(?![\w\.:])/', $value, $display_format );
 				}
-				// Restore masked display attributes in nested go_search
-				if ( ! empty( $nested_go_search_map ) ) {
-					$display_format = strtr( $display_format, $nested_go_search_map );
+				// Restore masked display attributes in nested gravops_search
+				if ( ! empty( $nested_gravops_search_map ) ) {
+					$display_format = strtr( $display_format, $nested_gravops_search_map );
 				}
 				$result_text = $display_format;
 				if ( $atts['link'] ) {
