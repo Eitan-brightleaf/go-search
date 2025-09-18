@@ -4,7 +4,7 @@ Tags: gravity forms, search, shortcode, entries, form data
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.2.4
+Stable tag: 1.0.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,13 +40,17 @@ Advanced usage with operators:
 * `search` - Field ID(s) to search in (comma-separated)
 * `operators` - Search operators (=, is, contains, like, in, not in, etc.)
 * `display` - Field ID(s) to display (comma-separated)
-* `limit` - Number of results to return (default: 1, use "all" for unlimited)
 * `sort_key` - Field to sort by (default: id)
 * `sort_direction` - Sort direction: ASC, DESC, or RAND (default: DESC)
+* `sort_is_num` - Sort by numeric value (true/false)
+* `secondary_sort_key` - Secondary sort key
+* `secondary_sort_direction` - Secondary sort direction
 * `unique` - Remove duplicate results (true/false)
+* `limit` - Number of results to return (default: 1, use "all" for unlimited)
 * `search_mode` - Search mode: "all" or "any" (default: all)
-* `default` - Default value when no results found
 * `separator` - Custom separator for multiple values
+* `search_empty` - Search for empty values (true/false)
+* `default` - Default value when no results found
 * `link` - Add admin link to entries (true/false)
 
 == Installation ==

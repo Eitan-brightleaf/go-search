@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GravityOps Search
  * Description: A shortcode to search and display Gravity Forms entries based on specified criteria and attributes.
- * Version: 1.2.4
+ * Version: 1.0.0
  * Author: BrightLeaf Digital
  * Author URI: https://digital.brightleaf.info/
  * License: GPL-2.0+
@@ -33,7 +33,7 @@ class GravityOps_Search extends GFAddOn {
 	 *
 	 * @var string Version of the plugin.
 	 */
-	protected $_version = '1.2.4';
+	protected $_version = '1.0.0';
 
 	/**
 	 * A string representing the slug used for the plugin.
