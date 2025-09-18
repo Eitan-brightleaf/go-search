@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+GFForms::include_addon_framework();
+
 /**
  * GravityOps_Search class
  *
@@ -628,7 +630,6 @@ class GravityOps_Search extends GFAddOn {
 add_action(
     'gform_loaded',
     function () {
-	    GFForms::include_addon_framework();
 		if ( class_exists( 'GFAddOn' ) ) {
 			GFAddOn::register( 'GravityOps_Search' );
 		}
