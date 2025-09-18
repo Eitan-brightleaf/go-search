@@ -96,8 +96,6 @@ class GravityOps_Search extends GFAddOn {
                 'target'                   => '0',
                 'search'                   => '',
                 'operators'                => '',
-                'greater_than'             => false,
-                'less_than'                => false,
                 'display'                  => '',
                 'sort_key'                 => 'id',
                 'sort_direction'           => 'DESC',
@@ -222,30 +220,6 @@ class GravityOps_Search extends GFAddOn {
             }
 
             $search_criteria['field_filters'][] = $field_filter;
-        }
-
-        // Process greater_than attribute
-        if ( $atts['greater_than'] ) {
-            $greater_than = array_map( 'trim', explode( ',', $atts['greater_than'] ) );
-            if ( count( $greater_than ) >= 2 ) {
-                $search_criteria['field_filters'][] = [
-                    'key'      => intval( $greater_than[0] ),
-                    'value'    => floatval( $greater_than[1] ),
-                    'operator' => '>',
-                ];
-            }
-        }
-
-        // Process less_than attribute
-        if ( $atts['less_than'] ) {
-            $less_than = array_map( 'trim', explode( ',', $atts['less_than'] ) );
-            if ( count( $less_than ) >= 2 ) {
-                $search_criteria['field_filters'][] = [
-                    'key'      => intval( $less_than[0] ),
-                    'value'    => floatval( $less_than[1] ),
-                    'operator' => '<',
-                ];
-            }
         }
 
         $sorting = [
